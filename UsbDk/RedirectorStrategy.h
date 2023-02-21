@@ -24,7 +24,11 @@
 #pragma once
 
 #include "HiderStrategy.h"
-#include "UsbTarget.h"
+#if 1
+# include "UsbTarget_USBDEX.h"
+#else
+# include "UsbTarget.h"
+#endif
 #include "WdfDevice.h"
 #include "Public.h"
 
