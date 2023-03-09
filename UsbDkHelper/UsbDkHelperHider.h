@@ -27,6 +27,8 @@
 
 #ifdef BUILD_DLL
 #define DLL __declspec(dllexport)
+#elif defined(STATIC_USBDK)
+#define DLL
 #else
 #ifdef _MSC_VER
 #define DLL __declspec(dllimport)
