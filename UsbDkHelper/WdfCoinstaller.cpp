@@ -26,7 +26,7 @@
 #include "tstrings.h"
 
 
-#define WDF_SECTION_NAME    TEXT("UsbDk.NT.Wdf")
+#define WDF_SECTION_NAME    TEXT("VIUSBDK.NT.Wdf")
 #if !TARGET_OS_WIN_XP
 #define COINSTALLER_VERSION TEXT("01011")
 #else

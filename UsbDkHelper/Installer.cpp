@@ -86,7 +86,7 @@ tstring UsbDkInstaller::CopyDriver()
         throw UsbDkInstallerFailedException(TEXT("GetCurrentDirectory failed!"));
     }
 
-    tstring driverOrigLocationStr(tstring(currDirectory) + TEXT("\\") USBDK_DRIVER_FILE_NAME);
+    tstring driverOrigLocationStr(tstring(currDirectory) + TEXT("\\viusbdk\\") USBDK_DRIVER_FILE_NAME);
 
     auto driverDestLocation = buildDriverPath(USBDK_DRIVER_FILE_NAME);
 
@@ -129,7 +129,7 @@ tstring UsbDkInstaller::buildInfFilePath()
         throw UsbDkInstallerFailedException(TEXT("GetCurrentDirectory failed!"));
     }
 
-    return tstring(currDir) + TEXT("\\") + USBDK_DRIVER_INF_NAME;
+    return tstring(currDir) + TEXT("\\viusbdk\\") + USBDK_DRIVER_INF_NAME;
 }
 
 void UsbDkInstaller::addUsbDkToRegistry()
