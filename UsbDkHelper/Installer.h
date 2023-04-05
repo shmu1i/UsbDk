@@ -23,8 +23,14 @@
 
 #pragma once
 
+#ifndef _M_ARM64
+# define USE_WDFCOINSTALLER 1
+#endif
+
 #include "Exception.h"
+#if USE_WDFCOINSTALLER
 #include "WdfCoinstaller.h"
+#endif  // USE_WDFCOINSTALLER
 #include "UsbDkHelper.h"
 #include "RegAccess.h"
 
@@ -58,7 +64,9 @@ public:
 protected:
 private:
 
+#if USE_WDFCOINSTALLER
     WdfCoinstaller m_wdfCoinstaller;
+#endif // USE_WDFCOINSTALLER
     ServiceManager m_scManager;
     UsbDkRegAccess m_regAccess;
 

@@ -49,13 +49,19 @@ bool UsbDkInstaller::Install(bool &NeedRollBack)
     NeedRollBack = true;
     auto infFilePath = buildInfFilePath();
 
+#if USE_WDFCOINSTALLER
     auto rebootRequired = !m_wdfCoinstaller.PreDeviceInstallEx(infFilePath);
+#else   // !USE_WDFCOINSTALLER
+    auto rebootRequired = false;
+#endif  // USE_WDFCOINSTALLER
 
     m_scManager.CreateServiceObject(USBDK_DRIVER_NAME, driverLocation.c_str());
 
     verifyDriverCanStart();
 
+#if USE_WDFCOINSTALLER
     m_wdfCoinstaller.PostDeviceInstall(infFilePath);
+#endif  // USE_WDFCOINSTALLER
     addUsbDkToRegistry();
 
     return rebootRequired ? false : DeviceMgr::ResetDeviceByClass(GUID_DEVINTERFACE_USB_HOST_CONTROLLER);
@@ -71,11 +77,15 @@ void UsbDkInstaller::Uninstall()
 
     auto infFilePath = buildInfFilePath();
 
+#if USE_WDFCOINSTALLER
     m_wdfCoinstaller.PreDeviceRemove(infFilePath);
+#endif  // USE_WDFCOINSTALLER
 
     m_scManager.DeleteServiceObject(USBDK_DRIVER_NAME);
 
+#if USE_WDFCOINSTALLER
     m_wdfCoinstaller.PostDeviceRemove(infFilePath);
+#endif  // USE_WDFCOINSTALLER
 }
 
 tstring UsbDkInstaller::CopyDriver()
