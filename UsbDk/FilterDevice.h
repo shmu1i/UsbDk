@@ -51,6 +51,8 @@ public:
 
     CUsbDkChildDevice(CRegText *DeviceID,
                       CRegText *InstanceID,
+                      CRegText *HubID,
+                      CRegText *PortString,
                       ULONG Port,
                       USB_DK_DEVICE_SPEED Speed,
                       USB_DEVICE_DESCRIPTOR &DevDescriptor,
@@ -59,6 +61,8 @@ public:
                       PDEVICE_OBJECT PDO)
         : m_DeviceID(DeviceID)
         , m_InstanceID(InstanceID)
+        , m_HubID(HubID)
+        , m_PortString(PortString)
         , m_Port(Port)
         , m_Speed(Speed)
         , m_DevDescriptor(DevDescriptor)
@@ -72,6 +76,7 @@ public:
     ULONG ParentID() const;
     PCWCHAR DeviceID() const { return *m_DeviceID->begin(); }
     PCWCHAR InstanceID() const { return *m_InstanceID->begin(); }
+    PCWCHAR HubID() const { return *m_HubID->begin(); }
     ULONG Port() const
     { return m_Port; }
     USB_DK_DEVICE_SPEED Speed() const
@@ -93,7 +98,10 @@ public:
     }
 
     bool Match(PCWCHAR deviceID, PCWCHAR instanceID) const
-    { return m_DeviceID->Match(deviceID) && m_InstanceID->Match(instanceID); }
+    {
+        return (m_HubID->Match(deviceID) && m_PortString->Match(instanceID)) ||
+                (m_DeviceID->Match(deviceID) && m_InstanceID->Match(instanceID));
+    }
 
     bool Match(PDEVICE_OBJECT PDO) const
     { return m_PDO == PDO; }
@@ -105,7 +113,9 @@ public:
 private:
     CObjHolder<CRegText> m_DeviceID;
     CObjHolder<CRegText> m_InstanceID;
-    ULONG m_Port;
+    CObjHolder<CRegText> m_HubID;
+    CObjHolder<CRegText> m_PortString;
+    ULONG m_Port = (ULONG)-1;
     USB_DK_DEVICE_SPEED m_Speed;
     USB_DEVICE_DESCRIPTOR m_DevDescriptor;
     TDescriptorsCache m_CfgDescriptors;

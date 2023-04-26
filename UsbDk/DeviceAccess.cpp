@@ -89,6 +89,32 @@ ULONG CWdmDeviceAccess::GetAddress()
     return Capabilities.Address;
 }
 
+CRegText* CWdmDeviceAccess::GetAddressString()
+{
+    auto Port = GetAddress();
+    if (Port == CWdmDeviceAccess::NO_ADDRESS)
+        return nullptr;
+
+    WCHAR Buffer[10] = { 0 };
+    UNICODE_STRING PortUnicode;
+    RtlInitEmptyUnicodeString(&PortUnicode, Buffer, sizeof(Buffer));
+
+    if (!NT_SUCCESS(RtlIntegerToUnicodeString(Port, 10, &PortUnicode)))
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVACCESS, "%!FUNC! Cannot convert port number to UNICODE_STRING.");
+        return nullptr;
+    }
+
+    CRegText* PortString = new CRegSz(static_cast<PWCHAR>(DuplicateStaticBuffer(PortUnicode.Buffer, PortUnicode.Length + sizeof(WCHAR), NonPagedPool)));
+    if (PortString->empty())
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVACCESS, "%!FUNC! Cannot allocate port string.");
+        return nullptr;
+    }
+
+    return PortString;
+}
+
 PWCHAR CWdmDeviceAccess::QueryBusID(BUS_QUERY_ID_TYPE idType)
 {
     CIrp irp;
@@ -385,6 +411,36 @@ bool UsbDkGetWdmDeviceIdentity(const PDEVICE_OBJECT PDO,
             return false;
         }
     }
+
+    return true;
+}
+
+bool UsbDkGetWdmDeviceDriverKeyName(const PDEVICE_OBJECT PDO, CObjHolder<CRegText>* DriverKeyName)
+{
+    if (!DriverKeyName || !PDO)
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVACCESS, "%!FUNC! Invalid paramteters.");
+        return false;
+    }
+
+    ULONG got = 0;
+    WCHAR PropertyKeyName[MAX_DEVICE_ID_LEN];
+
+    NTSTATUS status = IoGetDeviceProperty(PDO, DevicePropertyDriverKeyName, sizeof(PropertyKeyName), PropertyKeyName, &got);
+    if (!NT_SUCCESS(status))
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVACCESS, "%!FUNC! Can't get DevicePropertyDriverKeyName for PDO: %p, status: %!STATUS!", PDO, status);
+        return false;
+    }
+
+    auto string = new CRegSz(static_cast<PWCHAR>(DuplicateStaticBuffer(PropertyKeyName, got, NonPagedPool)));
+    if (string->empty())
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVACCESS, "%!FUNC! Can't allocate memory");
+        return false;
+    }
+
+    *DriverKeyName = string;
 
     return true;
 }

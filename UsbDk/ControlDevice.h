@@ -187,6 +187,11 @@ public:
     bool IsRedirected() const
     { return m_RedirectorDevice != nullptr; }
 
+    bool IsPortRedirection() const
+    {
+        return !(m_HubID == L"" || m_PortString == L"");
+    }
+
     bool IsPreparedForRemove() const
     { return m_RemovalInProgress; }
 
@@ -214,6 +219,9 @@ private:
 
     CString m_DeviceID;
     CString m_InstanceID;
+    CString m_HubID;
+    CString m_PortString;
+    ULONG m_Port = (ULONG)-1;
 
     CWdmEvent m_RedirectionCreated;
     CWdmEvent m_RedirectionRemoved;
@@ -312,6 +320,8 @@ public:
     bool NotifyRedirectorRemovalStarted(const USB_DK_DEVICE_ID &ID);
     bool WaitForDetachment(const USB_DK_DEVICE_ID &ID);
 
+    bool GetHubIDByPDO(const PDEVICE_OBJECT PDO, CObjHolder<CRegText>* HubID);
+
 private:
     NTSTATUS ReloadPersistentHideRules();
 
@@ -342,6 +352,8 @@ private:
 
     template <typename TFunctor>
     bool EnumUsbDevicesByID(const USB_DK_DEVICE_ID &ID, TFunctor Functor);
+    template <typename TFunctor>
+    bool EnumUsbDevicesByPDO(const PDEVICE_OBJECT PDO, TFunctor Functor);
     PDEVICE_OBJECT GetPDOByDeviceID(const USB_DK_DEVICE_ID &DeviceID);
 
     bool UsbDeviceExists(const USB_DK_DEVICE_ID &ID);

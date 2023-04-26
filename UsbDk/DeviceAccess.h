@@ -50,6 +50,7 @@ public:
     };
 
     ULONG GetAddress();
+    CRegText *GetAddressString();
     CRegText *GetDeviceID() { return new CRegSz(QueryBusID(BusQueryDeviceID)); }
     CRegText *GetInstanceID() { return new CRegSz(QueryBusID(BusQueryInstanceID)); }
     bool QueryPowerData(CM_POWER_DATA& powerData);
@@ -119,6 +120,8 @@ private:
 bool UsbDkGetWdmDeviceIdentity(const PDEVICE_OBJECT PDO,
                                CObjHolder<CRegText> *DeviceID,
                                CObjHolder<CRegText> *InstanceID = nullptr);
+
+bool UsbDkGetWdmDeviceDriverKeyName(const PDEVICE_OBJECT PDO, CObjHolder<CRegText>* DriverKeyName);
 
 USB_DK_DEVICE_SPEED UsbDkWdmUsbDeviceGetSpeed(PDEVICE_OBJECT PDO, PDRIVER_OBJECT DriverObject);
 

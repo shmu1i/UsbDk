@@ -351,6 +351,22 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
         return;
     }
 
+    CObjHolder<CRegText> PortString = pdoAccess.GetAddressString();
+    if (PortString->empty())
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot get device port number string");
+        return;
+    }
+
+    CObjHolder<CRegText> HubID;
+    PDEVICE_OBJECT LowerPDO = m_Owner->LowerDeviceObject();
+    if (!UsbDkGetWdmDeviceDriverKeyName(LowerPDO->DeviceObjectExtension->AttachedTo ? LowerPDO->DeviceObjectExtension->AttachedTo : LowerPDO, &HubID))
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot read HubID (DriverKeyName)");
+        return;
+    }
+    HubID->Dump();
+
     auto Speed = UsbDkWdmUsbDeviceGetSpeed(PDO, m_Owner->GetDriverObject());
     if (Speed == NoSpeed)
     {
@@ -389,8 +405,8 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
         return;
     }
 
-    CUsbDkChildDevice *Device = new CUsbDkChildDevice(DevID, InstanceID, Port, Speed, DevDescriptor,
-                                                      CfgDescriptors, *m_Owner, PDO);
+    CUsbDkChildDevice *Device = new CUsbDkChildDevice(DevID, InstanceID, HubID, PortString, Port, Speed,
+                                                      DevDescriptor, CfgDescriptors, *m_Owner, PDO);
 
     if (Device == nullptr)
     {
@@ -400,6 +416,8 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
 
     DevID.detach();
     InstanceID.detach();
+    PortString.detach();
+    HubID.detach();
 
     Children().PushBack(Device);
 
@@ -672,6 +690,36 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
         TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Assigning hidden USB device strategy");
         m_Strategy->Delete();
         m_Strategy = &m_HiderStrategy;
+        return true;
+    }
+
+    CObjHolder<CRegText> HubID;
+    if (!m_Strategy->GetControlDevice()->GetHubIDByPDO(DevObj, &HubID))
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot read HubID.");
+        return false;
+    }
+    HubID->Dump();
+
+    CWdmUsbDeviceAccess pdoAccess(DevObj);
+    CObjHolder<CRegText> PortString = pdoAccess.GetAddressString();
+    if (PortString->empty())
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot get device port string.");
+        return false;
+    }
+
+    USB_DK_DEVICE_ID PortID;
+    UsbDkFillIDStruct(&PortID, *HubID->begin(), *PortString->begin());
+
+    // Configuration tells to redirect -> redirector strategy
+    if (m_Strategy->GetControlDevice()->ShouldRedirect(PortID))
+    {
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Assigning redirected USB device strategy");
+        m_DevStrategy.SetDeviceID(HubID.detach());
+        m_DevStrategy.SetInstanceID(PortString.detach());
+        m_Strategy->Delete();
+        m_Strategy = &m_DevStrategy;
         return true;
     }
 

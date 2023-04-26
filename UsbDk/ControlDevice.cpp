@@ -415,6 +415,12 @@ bool CUsbDkControlDevice::EnumUsbDevicesByID(const USB_DK_DEVICE_ID &ID, TFuncto
     return UsbDevicesForEachIf([&ID](CUsbDkChildDevice *c) { return c->Match(ID.DeviceID, ID.InstanceID); }, Functor);
 }
 
+template <typename TFunctor>
+bool CUsbDkControlDevice::EnumUsbDevicesByPDO(const PDEVICE_OBJECT PDO, TFunctor Functor)
+{
+    return UsbDevicesForEachIf([&PDO](CUsbDkChildDevice* c) { return c->Match(PDO); }, Functor);
+}
+
 bool CUsbDkControlDevice::UsbDeviceExists(const USB_DK_DEVICE_ID &ID)
 {
     return !EnumUsbDevicesByID(ID, ConstFalse);
@@ -449,6 +455,38 @@ PDEVICE_OBJECT CUsbDkControlDevice::GetPDOByDeviceID(const USB_DK_DEVICE_ID &Dev
     }
 
     return PDO;
+}
+
+bool CUsbDkControlDevice::GetHubIDByPDO(const PDEVICE_OBJECT PDO, CObjHolder<CRegText> *HubID)
+{
+    WCHAR HubIdStr[MAX_DEVICE_ID_LEN];
+    size_t HubIdStrSize = 0;
+
+    EnumUsbDevicesByPDO(PDO,
+        [&](CUsbDkChildDevice* Child) -> bool
+        {   // spin locked
+            if (const auto ptr = Child->HubID()) {
+                const auto len = wcslen(ptr) + 1;
+
+                if (sizeof(HubIdStr) >= len * sizeof(WCHAR)) {
+                    HubIdStrSize = len * sizeof(WCHAR);
+                    memcpy(HubIdStr, ptr, HubIdStrSize);
+                }
+            }
+            return false;
+        });
+
+    if (HubIdStrSize) {
+        auto string = new CRegSz(static_cast<PWCHAR>(DuplicateStaticBuffer(HubIdStr, HubIdStrSize, NonPagedPool)));
+        if (!string->empty()) {
+
+            *HubID = string;
+            return true;
+        }
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC!  Can't allocate memory for HubID.");
+    }
+
+    return false;
 }
 
 NTSTATUS CUsbDkControlDevice::ResetUsbDevice(const USB_DK_DEVICE_ID &DeviceID, bool ForceD0)
@@ -738,7 +776,7 @@ NTSTATUS CUsbDkControlDevice::AddRedirect(const USB_DK_DEVICE_ID &DeviceId, HAND
     m_Redirections.Dump();
 
     auto resetRes = ResetUsbDevice(DeviceId, true);
-    if (!NT_SUCCESS(resetRes))
+    if (!NT_SUCCESS(resetRes) && !Redirection->IsPortRedirection())
     {
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Reset after start redirection failed. %!STATUS!", resetRes);
         AddRedirectRollBack(DeviceId, false);
@@ -1008,7 +1046,7 @@ NTSTATUS CUsbDkControlDevice::AddRedirectionToSet(const USB_DK_DEVICE_ID &Device
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Adding new redirection");
     newRedir->Dump();
 
-    if (!UsbDeviceExists(DeviceId))
+    if (!newRedir->IsPortRedirection() && !UsbDeviceExists(DeviceId))
     {
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! failed. Cannot redirect unknown device.");
         return STATUS_OBJECT_NAME_NOT_FOUND;
@@ -1104,6 +1142,28 @@ bool CUsbDkControlDevice::WaitForDetachment(const USB_DK_DEVICE_ID &ID)
 
 NTSTATUS CUsbDkRedirection::Create(const USB_DK_DEVICE_ID &Id)
 {
+    CObjHolder<CRegText> devID = new CRegSz((PWCHAR)Id.DeviceID);
+
+    bool isHubID = !devID->MatchPrefix(L"USB\\");
+
+    devID.detach();
+
+    if (isHubID)
+    {
+        UNICODE_STRING PortNumUnicode;
+        RtlInitUnicodeString(&PortNumUnicode, Id.InstanceID);
+
+        auto status = RtlUnicodeStringToInteger(&PortNumUnicode, 10, &m_Port);
+        if (!NT_SUCCESS(status))
+            return status;
+
+        status = m_PortString.Create(Id.InstanceID);
+        if (!NT_SUCCESS(status))
+            return status;
+
+        return m_HubID.Create(Id.DeviceID);
+    }
+
     auto status = m_DeviceID.Create(Id.DeviceID);
     if (!NT_SUCCESS(status))
     {
@@ -1173,20 +1233,26 @@ bool CUsbDkRedirection::WaitForDetachment()
 
 bool CUsbDkRedirection::operator==(const USB_DK_DEVICE_ID &Id) const
 {
-    return (m_DeviceID == Id.DeviceID) &&
-           (m_InstanceID == Id.InstanceID);
+    if (IsPortRedirection())
+        return m_HubID == Id.DeviceID && m_PortString == Id.InstanceID;
+    else
+        return m_DeviceID == Id.DeviceID && m_InstanceID == Id.InstanceID;
 }
 
 bool CUsbDkRedirection::operator==(const CUsbDkChildDevice &Dev) const
 {
-    return (m_DeviceID == Dev.DeviceID()) &&
-           (m_InstanceID == Dev.InstanceID());
+    if (IsPortRedirection())
+        return (m_HubID == Dev.HubID()) && (m_Port == Dev.Port());
+    else
+        return (m_DeviceID == Dev.DeviceID()) && (m_InstanceID == Dev.InstanceID());
 }
 
 bool CUsbDkRedirection::operator==(const CUsbDkRedirection &Other) const
 {
-    return (m_DeviceID == Other.m_DeviceID) &&
-           (m_InstanceID == Other.m_InstanceID);
+    if (IsPortRedirection())
+        return (m_HubID == Other.m_HubID) && (m_Port == Other.m_Port);
+    else
+        return (m_DeviceID == Other.m_DeviceID) && (m_InstanceID == Other.m_InstanceID);
 }
 
 NTSTATUS CUsbDkRedirection::CreateRedirectorHandle(HANDLE RequestorProcess, PHANDLE ObjectHandle)
