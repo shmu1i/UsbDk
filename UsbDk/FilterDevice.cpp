@@ -360,11 +360,25 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
 
     CObjHolder<CRegText> HubID;
     PDEVICE_OBJECT LowerPDO = m_Owner->LowerDeviceObject();
-    if (!UsbDkGetWdmDeviceDriverKeyName(LowerPDO->DeviceObjectExtension->AttachedTo ? LowerPDO->DeviceObjectExtension->AttachedTo : LowerPDO, &HubID))
+    if (!LowerPDO)
     {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! No lower PDO.");
+        return;
+    }
+
+    for (auto AttachedPDO = LowerPDO->DeviceObjectExtension->AttachedTo;
+         AttachedPDO;
+         AttachedPDO = AttachedPDO->DeviceObjectExtension->AttachedTo)
+    {
+        if (UsbDkGetWdmDeviceDriverKeyName(AttachedPDO, &HubID))
+            break;
+    }
+
+    if (HubID->empty()) {
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot read HubID (DriverKeyName)");
         return;
     }
+
     HubID->Dump();
 
     auto Speed = UsbDkWdmUsbDeviceGetSpeed(PDO, m_Owner->GetDriverObject());
@@ -598,7 +612,10 @@ void CUsbDkFilterDevice::ContextCleanup(_In_ WDFOBJECT DeviceObject)
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Entry");
 
     auto deviceContext = UsbDkFilterGetContext(DeviceObject);
-    deviceContext->UsbDkFilter->Release();
+    if (const auto UsbDkFilter = deviceContext->UsbDkFilter) {
+        UsbDkFilter->RedirectorTargetReset();
+        UsbDkFilter->Release();
+    }
 }
 
 bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)

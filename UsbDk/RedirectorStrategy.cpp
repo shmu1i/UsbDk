@@ -632,6 +632,12 @@ void CUsbDkRedirectorStrategy::OnClose()
     UsbDkFillIDStruct(&ID, *m_DeviceID->begin(), *m_InstanceID->begin());
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_REDIRECTOR, "%!FUNC!");
 
+    if (m_ControlDevice->IsPortRedirection(ID))
+    {
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_REDIRECTOR, "%!FUNC! Do not remove redirection for removed device if port redirecion is used.");
+        return;
+    }
+
     auto status = m_ControlDevice->RemoveRedirect(ID);
     if (!NT_SUCCESS(status))
     {

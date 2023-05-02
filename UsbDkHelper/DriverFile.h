@@ -44,7 +44,13 @@ public:
                     : m_bOverlapped(bOverlapped), m_hDriver(ObjectHandle)
     {}
     virtual ~UsbDkDriverFile()
-    { CloseHandle(m_hDriver); }
+    {
+        if (m_hDriver != INVALID_HANDLE_VALUE)
+            CloseHandle(m_hDriver);
+
+        if (m_hPortCtrl != INVALID_HANDLE_VALUE)
+            CloseHandle(m_hPortCtrl);
+    }
 
     TransferResult Ioctl(DWORD Code,
                bool ShortBufferOk = false,
@@ -67,6 +73,7 @@ public:
 
 protected:
     HANDLE m_hDriver;
+    HANDLE m_hPortCtrl = INVALID_HANDLE_VALUE;
 
 private:
     bool m_bOverlapped;

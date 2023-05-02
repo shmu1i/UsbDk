@@ -87,6 +87,11 @@ public:
     void SetInstanceID(CRegText *InstID)
     { m_InstanceID = InstID; }
 
+    void TargetReset()
+    {
+        m_Target.Reset();
+    }
+
     static size_t GetRequestContextSize();
 
 private:

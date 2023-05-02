@@ -79,7 +79,7 @@ void CUsbDkHiderStrategy::PatchDeviceID(PIRP Irp)
         case BusQueryInstanceID:
         {
             CString InstanceID;
-            auto status = InstanceID.Create(USBDK_DRIVER_NAME, m_Owner->GetSerialNumber());
+            auto status = InstanceID.Create(L"UsbDkFilter", m_Owner->GetInstanceNumber());
             if (!NT_SUCCESS(status))
             {
                 TraceEvents(TRACE_LEVEL_ERROR, TRACE_HIDER, "%!FUNC! Failed to create instance ID string %!STATUS!", status);

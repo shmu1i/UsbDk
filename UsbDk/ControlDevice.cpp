@@ -533,6 +533,72 @@ void CUsbDkControlDevice::ContextCleanup(_In_ WDFOBJECT DeviceObject)
     delete deviceContext->UsbDkControl;
 }
 
+static void DevicePortCtrlClose(_In_ WDFFILEOBJECT fileObject)
+{
+    auto fileCtx = VIUsbDkPortCtrlGetContext(fileObject);
+
+    const auto UsbDkControl = fileCtx->UsbDkControl;
+    if (!UsbDkControl)
+        return;
+
+    PCUNICODE_STRING HubID = fileCtx->HubID, PortString = fileCtx->PortString;
+
+    if (HubID->Length && PortString->Length)
+    {
+        USB_DK_DEVICE_ID ID;
+        UsbDkFillIDStruct(&ID, HubID->Buffer, PortString->Buffer);
+
+        auto status = UsbDkControl->RemoveRedirect(ID, true);
+        if (!NT_SUCCESS(status))
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! RemoveRedirect failed: %!STATUS!", status);
+    }
+
+    fileCtx->UsbDkControl->Release();
+}
+
+NTSTATUS CUsbDkControlDevice::CreatePortControlDevice(WDFDRIVER Driver)
+{
+    auto DeviceInit = WdfControlDeviceInitAllocate(Driver, &SDDL_DEVOBJ_SYS_ALL_ADM_RWX_WORLD_RWX_RES_RWX);
+    if (!DeviceInit)
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Cannot allocate DeviceInit");
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    {
+        WDF_FILEOBJECT_CONFIG config;
+        WDF_OBJECT_ATTRIBUTES attributes;
+
+        WDF_FILEOBJECT_CONFIG_INIT(&config, nullptr, &DevicePortCtrlClose, nullptr);
+        WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&attributes, VIUSBDK_PORT_CTRL_DEVICE_CONTEXT);
+
+        config.FileObjectClass = WdfFileObjectWdfCanUseFsContext;
+        attributes.ExecutionLevel = WdfExecutionLevelPassive;
+
+        WdfDeviceInitSetFileObjectConfig(DeviceInit, &config, &attributes);
+    }
+
+    DECLARE_CONST_UNICODE_STRING(ntDeviceName, USBDK_PCTRL_DEVICE_NAME);
+    auto status = WdfDeviceInitAssignName(DeviceInit, &ntDeviceName);
+    if (!NT_SUCCESS(status)) {
+        WdfDeviceInitFree(DeviceInit);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! WdfDeviceInitAssignName failed %!STATUS!", status);
+        return status;
+    }
+
+    status = WdfDeviceCreate(&DeviceInit, nullptr, &m_DevicePortCtrl);
+    if (!NT_SUCCESS(status))
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! WdfDeviceCreate failed %!STATUS!", status);
+        WdfDeviceInitFree(DeviceInit);
+        return status;
+    }
+
+    WdfControlFinishInitializing(m_DevicePortCtrl);
+
+    return status;
+}
+
 NTSTATUS CUsbDkControlDevice::Create(WDFDRIVER Driver)
 {
     CUsbDkControlDeviceInit DeviceInit;
@@ -554,6 +620,13 @@ NTSTATUS CUsbDkControlDevice::Create(WDFDRIVER Driver)
     }
 
     UsbDkControlGetContext(m_Device)->UsbDkControl = this;
+
+    status = CreatePortControlDevice(Driver);
+    if (!NT_SUCCESS(status))
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Can't create port control device. %!STATUS!", status);
+        return status;
+    }
 
     CObjHolder<CUsbDkHiderDevice> HiderDevice(new CUsbDkHiderDevice());
     if (!HiderDevice)
@@ -776,7 +849,22 @@ NTSTATUS CUsbDkControlDevice::AddRedirect(const USB_DK_DEVICE_ID &DeviceId, HAND
     m_Redirections.Dump();
 
     auto resetRes = ResetUsbDevice(DeviceId, true);
-    if (!NT_SUCCESS(resetRes) && !Redirection->IsPortRedirection())
+
+    if (Redirection->IsPortRedirection())
+    {
+        if (!NT_SUCCESS(resetRes))
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Can't find device for reset. Start port redirection without device.");
+
+        auto status = Redirection->CreatePortRedirectorHandle(DevicePortControlObject(), RequestorProcess, RedirectorDevice);
+        if (!NT_SUCCESS(status))
+        {
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! CreateRedirectorHandle() failed. %!STATUS!", status);
+            AddRedirectRollBack(DeviceId, false);
+        }
+        return status;
+    }
+
+    if (!NT_SUCCESS(resetRes))
     {
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Reset after start redirection failed. %!STATUS!", resetRes);
         AddRedirectRollBack(DeviceId, false);
@@ -1063,9 +1151,11 @@ NTSTATUS CUsbDkControlDevice::AddRedirectionToSet(const USB_DK_DEVICE_ID &Device
     return STATUS_SUCCESS;
 }
 
-NTSTATUS CUsbDkControlDevice::RemoveRedirect(const USB_DK_DEVICE_ID &DeviceId)
+NTSTATUS CUsbDkControlDevice::RemoveRedirect(const USB_DK_DEVICE_ID &DeviceId, bool PortRedirection)
 {
-    if (NotifyRedirectorRemovalStarted(DeviceId))
+    bool success = PortRedirection ? NotifyRedirectorRemovalStartedNoPidCheck(DeviceId) :
+                                     NotifyRedirectorRemovalStarted(DeviceId);
+    if (success)
     {
         auto res = ResetUsbDevice(DeviceId, false);
         if (NT_SUCCESS(res))
@@ -1109,6 +1199,15 @@ NTSTATUS CUsbDkControlDevice::RemoveRedirect(const USB_DK_DEVICE_ID &DeviceId)
     return STATUS_OBJECT_NAME_NOT_FOUND;
 }
 
+bool CUsbDkControlDevice::IsPortRedirection(const USB_DK_DEVICE_ID& ID)
+{
+    bool PortRedirectin = false;
+    m_Redirections.ModifyOne(&ID, [&](CUsbDkRedirection* R) {
+        PortRedirectin = R->IsPortRedirection();
+    });
+    return PortRedirectin;
+}
+
 bool CUsbDkControlDevice::NotifyRedirectorAttached(CRegText *DeviceID, CRegText *InstanceID, CUsbDkFilterDevice *RedirectorDevice)
 {
     USB_DK_DEVICE_ID ID;
@@ -1121,6 +1220,11 @@ bool CUsbDkControlDevice::NotifyRedirectorRemovalStarted(const USB_DK_DEVICE_ID 
 {
     ULONG pid = (ULONG)(ULONG_PTR)PsGetCurrentProcessId();
     return m_Redirections.ModifyOne(&ID, [](CUsbDkRedirection *R){ R->NotifyRedirectionRemovalStarted(); }, pid);
+}
+
+bool CUsbDkControlDevice::NotifyRedirectorRemovalStartedNoPidCheck(const USB_DK_DEVICE_ID& ID)
+{
+    return m_Redirections.ModifyOne(&ID, [](CUsbDkRedirection* R) { R->NotifyRedirectionRemovalStarted(); });
 }
 
 bool CUsbDkControlDevice::WaitForDetachment(const USB_DK_DEVICE_ID &ID)
@@ -1176,9 +1280,9 @@ NTSTATUS CUsbDkRedirection::Create(const USB_DK_DEVICE_ID &Id)
 void CUsbDkRedirection::Dump(LPCSTR message) const
 {
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE,
-                "%!FUNC! %s DevID: %wZ, InstanceID: %wZ",
+                "%!FUNC! %s DevID: %wZ, InstanceID: %wZ, HubID: %wZ, Port: %wZ",
                 message,
-                m_DeviceID, m_InstanceID);
+                m_DeviceID, m_InstanceID, m_HubID, m_PortString);
 }
 
 bool CUsbDkRedirection::MatchProcess(ULONG pid)
@@ -1206,6 +1310,12 @@ void CUsbDkRedirection::NotifyRedirectionRemoved()
 
         m_RedirectionRemoved.Set();
     }
+
+    if (IsPortRedirection() && m_RedirectorDevice)
+    {
+        m_RedirectorDevice->Release();
+        m_RedirectorDevice = nullptr;
+    }
 }
 
 void CUsbDkRedirection::NotifyRedirectionRemovalStarted()
@@ -1214,8 +1324,12 @@ void CUsbDkRedirection::NotifyRedirectionRemovalStarted()
     Dump();
 
     m_RemovalInProgress = true;
-    m_RedirectorDevice->Release();
-    m_RedirectorDevice = nullptr;
+
+    if (m_RedirectorDevice)
+    {
+        m_RedirectorDevice->Release();
+        m_RedirectorDevice = nullptr;
+    }
     m_RedirectionCreated.Clear();
 }
 
@@ -1253,6 +1367,74 @@ bool CUsbDkRedirection::operator==(const CUsbDkRedirection &Other) const
         return (m_HubID == Other.m_HubID) && (m_Port == Other.m_Port);
     else
         return (m_DeviceID == Other.m_DeviceID) && (m_InstanceID == Other.m_InstanceID);
+}
+
+NTSTATUS CUsbDkRedirection::CreatePortRedirectorHandle(WDFDEVICE PortCtrlDevice, HANDLE RequestorProcess, PHANDLE ObjectHandle)
+{
+    if (IsPreparedForRemove())
+    {
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC!: device already marked for removal");
+        return STATUS_DEVICE_REMOVED;
+    }
+
+    IO_STATUS_BLOCK IoStatusBlock;
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    DECLARE_CONST_UNICODE_STRING(ntDeviceName, USBDK_PCTRL_DEVICE_NAME);
+
+    InitializeObjectAttributes(&ObjectAttributes, const_cast<UNICODE_STRING*>(&ntDeviceName),
+                               OBJ_KERNEL_HANDLE, nullptr, nullptr);
+
+    HANDLE KernelHandle;
+    auto status = ZwOpenFile(&KernelHandle,
+                             GENERIC_READ | GENERIC_WRITE,
+                             &ObjectAttributes, &IoStatusBlock, 0,
+                             FILE_NON_DIRECTORY_FILE | FILE_RANDOM_ACCESS);
+    if (!NT_SUCCESS(status))
+    {
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC!: can't open port control device: %!STATUS!", status);
+        return status;
+    }
+
+    FILE_OBJECT* fileObj;
+    status = ObReferenceObjectByHandle(KernelHandle, 0L, *IoFileObjectType, KernelMode,
+                                       (PVOID*)&fileObj, nullptr);
+    if (!NT_SUCCESS(status))
+    {
+        ZwClose(KernelHandle);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC!: ObReferenceObjectByHandle failed: %!STATUS!", status);
+        return status;
+    }
+
+    WDFFILEOBJECT wdfFileObj = WdfDeviceGetFileObject(PortCtrlDevice, fileObj);
+    if (!wdfFileObj)
+    {
+        ObDereferenceObject((PVOID)fileObj);
+        ZwClose(KernelHandle);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC!: WdfDeviceGetFileObject failed.");
+        return STATUS_DEVICE_NOT_READY;
+    }
+
+    auto fileCtx = VIUsbDkPortCtrlGetContext(wdfFileObj);
+    fileCtx->HubID.Create(m_HubID);
+    fileCtx->PortString.Create(m_PortString);
+    fileCtx->UsbDkControl = CUsbDkControlDevice::Reference(WdfDeviceGetDriver(PortCtrlDevice));
+
+    m_OwnerPid = (ULONG)(ULONG_PTR)PsGetCurrentProcessId();
+
+    ObDereferenceObject((PVOID)fileObj);
+
+    status = ZwDuplicateObject(ZwCurrentProcess(), KernelHandle, RequestorProcess,
+                               ObjectHandle, 0, 0, DUPLICATE_SAME_ACCESS |
+                                                   DUPLICATE_SAME_ATTRIBUTES |
+                                                   DUPLICATE_CLOSE_SOURCE);
+
+    if (!NT_SUCCESS(status))
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! ZwDuplicateObject failed. %!STATUS!", status);
+        ZwClose(KernelHandle);
+    }
+
+    return status;
 }
 
 NTSTATUS CUsbDkRedirection::CreateRedirectorHandle(HANDLE RequestorProcess, PHANDLE ObjectHandle)

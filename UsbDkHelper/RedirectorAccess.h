@@ -55,6 +55,16 @@ public:
     HANDLE GetSystemHandle() const
     { return m_hDriver; }
 
+    void PlugInDeviceHandle(HANDLE DeviceHandle)
+    {
+        if (m_hPortCtrl == INVALID_HANDLE_VALUE)
+            m_hPortCtrl = m_hDriver;
+        else
+            CloseHandle(m_hDriver);
+
+        m_hDriver = DeviceHandle;
+    }
+
 private:
 
     TransferResult TransactPipe(USB_DK_TRANSFER_REQUEST &Request,

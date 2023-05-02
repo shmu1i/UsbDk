@@ -77,6 +77,7 @@ public:
     PCWCHAR DeviceID() const { return *m_DeviceID->begin(); }
     PCWCHAR InstanceID() const { return *m_InstanceID->begin(); }
     PCWCHAR HubID() const { return *m_HubID->begin(); }
+    PCWCHAR PortString() const { return *m_PortString->begin(); }
     ULONG Port() const
     { return m_Port; }
     USB_DK_DEVICE_SPEED Speed() const
@@ -170,6 +171,12 @@ public:
     ULONG GetChildrenCount()
     { return m_Strategy->Children().GetCount(); }
 
+    void RedirectorTargetReset()
+    {
+        if (const auto DevStrategy = m_Strategy.GetDevStrategy())
+            DevStrategy->TargetReset();
+    }
+
     WDFDRIVER GetDriverHandle() const
     { return m_Driver; }
 
@@ -209,6 +216,10 @@ private:
         bool SelectStrategy(PDEVICE_OBJECT Device);
         void SetNullStrategy() { m_Strategy = &m_NullStrategy; }
         CUsbDkFilterStrategy *operator ->() const { return m_Strategy; }
+        CUsbDkRedirectorStrategy* GetDevStrategy()
+        {
+            return &m_DevStrategy;
+        }
         static size_t GetRequestContextSize();
         operator bool() const { return m_Strategy != nullptr; }
     private:

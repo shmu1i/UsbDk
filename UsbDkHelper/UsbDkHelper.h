@@ -251,6 +251,18 @@ extern "C" {
     *
     */
     DLL HANDLE           UsbDk_GetRedirectorSystemHandle(HANDLE DeviceHandle);
+
+    /* Set system handle usb port redirection
+    *
+    * @params
+    *    IN  - DeviceHandle  - handle of target USB device
+    *    OUT - None
+    *
+    * @return
+    *  TRUE if function succeeds
+    *
+    */
+    DLL BOOL             UsbDk_SetRedirectorSystemHandle(HANDLE DeviceHandle, HANDLE SystemHandle);
 #ifdef __cplusplus
 }
 #endif

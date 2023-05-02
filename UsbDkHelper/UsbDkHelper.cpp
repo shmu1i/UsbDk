@@ -291,6 +291,23 @@ HANDLE UsbDk_GetRedirectorSystemHandle(HANDLE DeviceHandle)
     }
 }
 
+BOOL UsbDk_SetRedirectorSystemHandle(HANDLE DeviceHandle, HANDLE SystemHandle)
+{
+    try
+    {
+        UsbDkDriverAccess driverAccess;
+        auto deviceHandle = unpackHandle<REDIRECTED_DEVICE_HANDLE>(DeviceHandle);
+        deviceHandle->RedirectorAccess->PlugInDeviceHandle(SystemHandle);
+        return true;
+    }
+    catch (const exception& e)
+    {
+        printExceptionString(e.what());
+    }
+
+    return false;
+}
+
 HANDLE UsbDk_CreateHiderHandle()
 {
     try

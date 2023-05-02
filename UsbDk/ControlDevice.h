@@ -203,6 +203,7 @@ public:
     bool WaitForDetachment();
 
     NTSTATUS CreateRedirectorHandle(HANDLE RequestorProcess, PHANDLE ObjectHandle);
+    NTSTATUS CreatePortRedirectorHandle(WDFDEVICE PortCtrlDevice, HANDLE RequestorProcess, PHANDLE ObjectHandle);
 
 private:
     ~CUsbDkRedirection()
@@ -257,6 +258,11 @@ class CUsbDkControlDevice : private CWdfControlDevice, public CAllocatable<USBDK
 {
 public:
     CUsbDkControlDevice() {}
+    ~CUsbDkControlDevice()
+    {
+        if (m_DevicePortCtrl)
+            WdfObjectDelete(m_DevicePortCtrl);
+    }
 
     NTSTATUS Create(WDFDRIVER Driver);
     NTSTATUS Register();
@@ -282,7 +288,8 @@ public:
 
     void ClearHideRules();
 
-    NTSTATUS RemoveRedirect(const USB_DK_DEVICE_ID &DeviceId);
+    NTSTATUS RemoveRedirect(const USB_DK_DEVICE_ID &DeviceId, bool PortRedirection = false);
+
     NTSTATUS GetConfigurationDescriptor(const USB_DK_CONFIG_DESCRIPTOR_REQUEST &Request,
                                         PUSB_CONFIGURATION_DESCRIPTOR Descriptor,
                                         size_t *OutputBuffLen);
@@ -316,17 +323,29 @@ public:
                                                                        { Entry->NotifyRedirectionRemoved();} );
    }
 
+    bool IsPortRedirection(const USB_DK_DEVICE_ID& ID);
+
     bool NotifyRedirectorAttached(CRegText *DeviceID, CRegText *InstanceID, CUsbDkFilterDevice *RedirectorDevice);
     bool NotifyRedirectorRemovalStarted(const USB_DK_DEVICE_ID &ID);
+    bool NotifyRedirectorRemovalStartedNoPidCheck(const USB_DK_DEVICE_ID& ID);
     bool WaitForDetachment(const USB_DK_DEVICE_ID &ID);
 
     bool GetHubIDByPDO(const PDEVICE_OBJECT PDO, CObjHolder<CRegText>* HubID);
+
+    NTSTATUS CreatePortControlDevice(WDFDRIVER Driver);
+
+    WDFDEVICE DevicePortControlObject()
+    {
+        return m_DevicePortCtrl;
+    }
 
 private:
     NTSTATUS ReloadPersistentHideRules();
 
     CUsbDkControlDeviceQueue m_DeviceQueue;
     static CRefCountingHolder<CUsbDkControlDevice> *m_UsbDkControlDevice;
+
+    WDFDEVICE m_DevicePortCtrl = WDF_NO_HANDLE;
 
     CObjHolder<CUsbDkHiderDevice, CWdfDeviceDeleter<CUsbDkHiderDevice> > m_HiderDevice;
 
@@ -381,3 +400,10 @@ typedef struct _USBDK_CONTROL_DEVICE_EXTENSION {
 
 } USBDK_CONTROL_DEVICE_EXTENSION, *PUSBDK_CONTROL_DEVICE_EXTENSION;
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(USBDK_CONTROL_DEVICE_EXTENSION, UsbDkControlGetContext);
+
+typedef struct _VIUSBDK_PORT_CTRL_DEVICE_CONTEXT {
+    CString HubID;
+    CString PortString;
+    CUsbDkControlDevice* UsbDkControl;
+} VIUSBDK_PORT_CTRL_DEVICE_CONTEXT, * PVIUSBDK_PORT_CTRL_DEVICE_CONTEXT;
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(VIUSBDK_PORT_CTRL_DEVICE_CONTEXT, VIUsbDkPortCtrlGetContext);
