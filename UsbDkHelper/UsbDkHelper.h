@@ -212,7 +212,7 @@ extern "C" {
     * TRUE if function succeeds
     *
     */
-    DLL BOOL             UsbDk_ResetPipe(HANDLE DeviceHandle, ULONG64 PipeAddress);
+    DLL BOOL             UsbDk_ResetPipe(HANDLE DeviceHandle, ULONG64 PipeAddress, LPOVERLAPPED Overlapped);
 
     /* Set active alternative settings for USB device
     *

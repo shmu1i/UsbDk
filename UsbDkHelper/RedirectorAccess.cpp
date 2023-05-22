@@ -56,9 +56,13 @@ void UsbDkRedirectorAccess::AbortPipe(ULONG64 PipeAddress)
     IoctlSync(IOCTL_USBDK_DEVICE_ABORT_PIPE, false, &PipeAddress, sizeof(PipeAddress));
 }
 
-void UsbDkRedirectorAccess::ResetPipe(ULONG64 PipeAddress)
+void UsbDkRedirectorAccess::ResetPipe(ULONG64 PipeAddress, LPOVERLAPPED Overlapped)
 {
-    IoctlSync(IOCTL_USBDK_DEVICE_RESET_PIPE, false, &PipeAddress, sizeof(PipeAddress));
+    DWORD returned;
+    DeviceIoControl(m_hDriver, IOCTL_USBDK_DEVICE_RESET_PIPE, &PipeAddress, sizeof(PipeAddress), NULL, 0, &returned, Overlapped);
+    const auto gle = GetLastError();
+    if (gle != ERROR_IO_PENDING)
+        throw UsbDkDriverFileException(TEXT("DeviceIoControl(IOCTL_USBDK_DEVICE_RESET_PIPE) failed"), gle);
 }
 
 void UsbDkRedirectorAccess::SetAltsetting(ULONG64 InterfaceIdx, ULONG64 AltSettingIdx)

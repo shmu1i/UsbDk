@@ -232,12 +232,12 @@ BOOL UsbDk_AbortPipe(HANDLE DeviceHandle, ULONG64 PipeAddress)
     }
 }
 
-BOOL UsbDk_ResetPipe(HANDLE DeviceHandle, ULONG64 PipeAddress)
+BOOL UsbDk_ResetPipe(HANDLE DeviceHandle, ULONG64 PipeAddress, LPOVERLAPPED Overlapped)
 {
     try
     {
         auto deviceHandle = unpackHandle<REDIRECTED_DEVICE_HANDLE>(DeviceHandle);
-        deviceHandle->RedirectorAccess->ResetPipe(PipeAddress);
+        deviceHandle->RedirectorAccess->ResetPipe(PipeAddress, Overlapped);
         return TRUE;
     }
     catch (const exception &e)
