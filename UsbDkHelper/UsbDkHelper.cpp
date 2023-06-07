@@ -217,12 +217,12 @@ TransferResult UsbDk_ReadPipe(HANDLE DeviceHandle, PUSB_DK_TRANSFER_REQUEST Requ
     }
 }
 
-BOOL UsbDk_AbortPipe(HANDLE DeviceHandle, ULONG64 PipeAddress)
+BOOL UsbDk_AbortPipe(HANDLE DeviceHandle, ULONG64 PipeAddress, LPOVERLAPPED Overlapped)
 {
     try
     {
         auto deviceHandle = unpackHandle<REDIRECTED_DEVICE_HANDLE>(DeviceHandle);
-        deviceHandle->RedirectorAccess->AbortPipe(PipeAddress);
+        deviceHandle->RedirectorAccess->AbortPipe(PipeAddress, Overlapped);
         return TRUE;
     }
     catch (const exception &e)

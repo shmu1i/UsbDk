@@ -47,7 +47,7 @@ public:
 
     TransferResult ReadPipe(USB_DK_TRANSFER_REQUEST &Request, LPOVERLAPPED Overlapped);
     TransferResult WritePipe(USB_DK_TRANSFER_REQUEST &Request, LPOVERLAPPED Overlapped);
-    void AbortPipe(ULONG64 PipeAddress);
+    void AbortPipe(ULONG64 PipeAddress, LPOVERLAPPED Overlapped);
     void ResetPipe(ULONG64 PipeAddress, LPOVERLAPPED Overlapped);
     void SetAltsetting(ULONG64 InterfaceIdx, ULONG64 AltSettingIdx);
     void ResetDevice();

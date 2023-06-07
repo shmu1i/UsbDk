@@ -199,7 +199,7 @@ extern "C" {
     * TRUE if function succeeds
     *
     */
-    DLL BOOL             UsbDk_AbortPipe(HANDLE DeviceHandle, ULONG64 PipeAddress);
+    DLL BOOL             UsbDk_AbortPipe(HANDLE DeviceHandle, ULONG64 PipeAddress, LPOVERLAPPED Overlapped);
 
     /* Issue an USB reset pipe request
     *
