@@ -848,9 +848,9 @@ NTSTATUS CUsbDkControlDevice::AddRedirect(const USB_DK_DEVICE_ID &DeviceId, HAND
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Success. New redirections list:");
     m_Redirections.Dump();
 
-    auto resetRes = ResetUsbDevice(DeviceId, true);
+    auto resetRes = ResetUsbDevice(DeviceId, false);
 
-    if (Redirection->IsPortRedirection())
+    if (Redirection->IsPortRedirection() && (NT_SUCCESS(resetRes) || resetRes == STATUS_NO_SUCH_DEVICE))
     {
         if (!NT_SUCCESS(resetRes))
             TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Can't find device for reset. Start port redirection without device.");
