@@ -95,9 +95,43 @@ NTSTATUS CUsbDkFilterDeviceInit::Configure(ULONG InstanceNumber)
                           },
                           WDF_NO_EVENT_CALLBACK);
 
-    status = SetPreprocessCallback([](_In_ WDFDEVICE Device, _Inout_  PIRP Irp)
-                                        { return Strategy(Device)->PNPPreProcess(Irp); },
-                                        IRP_MJ_PNP);
+    status = SetPreprocessCallback([](_In_ WDFDEVICE Device, _Inout_  PIRP Irp) {
+        PDEVICE_OBJECT pdo = WdfDeviceWdmGetPhysicalDevice(Device);
+        PUNICODE_STRING driverName = &pdo->DriverObject->DriverName;
+#if 1
+        static const UNICODE_STRING blacklist[] = {
+            RTL_CONSTANT_STRING(L"\\Driver\\VIUSBBus"),
+        };
+
+        for (auto i = 0; i < sizeof(blacklist) / sizeof(blacklist[0]); i++)
+            if (RtlEqualUnicodeString(driverName, &blacklist[i], TRUE)) {
+                TraceEvents(TRACE_LEVEL_WARNING, TRACE_FILTERDEVICE, "!!!! PDO 0x%p WILL BE IGNORED BECAUSE IT'S DRIVER NAME ('%S') IS ON BLACKLIST LIST",
+                    pdo, driverName->Buffer);
+
+                IoSkipCurrentIrpStackLocation(Irp);
+                return WdfDeviceWdmDispatchPreprocessedIrp(Device, Irp);
+            }
+
+        return Strategy(Device)->PNPPreProcess(Irp);
+#else
+        static const UNICODE_STRING whitelist[] = {
+            RTL_CONSTANT_STRING(L"\\Driver\\usbehci"),
+            RTL_CONSTANT_STRING(L"\\Driver\\USBXHCI"),
+            RTL_CONSTANT_STRING(L"\\Driver\\usbhub"),
+            RTL_CONSTANT_STRING(L"\\Driver\\USBHUB3"),
+        };
+
+        for (auto i = 0; i < sizeof(whitelist) / sizeof(whitelist[0]); i++)
+            if (RtlEqualUnicodeString(driverName, &whitelist[i], TRUE))
+                return Strategy(Device)->PNPPreProcess(Irp);
+
+        TraceEvents(TRACE_LEVEL_WARNING, TRACE_FILTERDEVICE, "!!!! PDO 0x%p WILL BE IGNORED BECAUSE IT'S DRIVER NAME ('%S') IS NOT ON WHITE LIST",
+            pdo, driverName->Buffer);
+
+        IoSkipCurrentIrpStackLocation(Irp);
+        return WdfDeviceWdmDispatchPreprocessedIrp(Device, Irp);
+#endif
+        }, IRP_MJ_PNP);
 
     return status;
 }
