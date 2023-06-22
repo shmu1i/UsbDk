@@ -117,7 +117,7 @@ void UsbDkInstaller::DeleteDriver()
         auto errCode = GetLastError();
         if (errCode != ERROR_FILE_NOT_FOUND)
         {
-            throw UsbDkInstallerFailedException(TEXT("DeleteFile failed."), errCode);
+            // throw UsbDkInstallerFailedException(TEXT("DeleteFile failed."), errCode);    // NO REAL NEAD TO INTERRUPT UNINSTALLATION
         }
         return;
     }
@@ -320,7 +320,7 @@ void UsbDkInstaller::verifyDriverCanStart()
     try
     {
         m_scManager.StartServiceObject(USBDK_DRIVER_NAME);
-        m_scManager.StopServiceObject(USBDK_DRIVER_NAME);
+        //m_scManager.StopServiceObject(USBDK_DRIVER_NAME); // NO POINT TO WAIT FOR DRIVER TO STOP COZ WE'RE NOT EVEN TRYING TO STOP IT AND NO POINT TO DO IT
     }
     catch (const UsbDkServiceManagerFailedException &e)
     {

@@ -34,19 +34,16 @@ bool DeviceMgr::ResetDeviceByClass(const GUID &ClassGuid)
         throw UsbDkDeviceMgrException(TEXT("SetupDiGetClassDevsEx() failed!!"));
     }
 
+    auto okay = true;
+
     SP_DEVINFO_DATA devInfo;
     devInfo.cbSize = sizeof(devInfo);
     for (DWORD devIndex = 0; SetupDiEnumDeviceInfo(hDevInfo, devIndex, &devInfo); devIndex++)
-    {
-        if (!ResetDevice(hDevInfo, &devInfo))
-        {
-            return false;
-        }
-    }
+        okay &= ResetDevice(hDevInfo, &devInfo);
 
     SetupDiDestroyDeviceInfoList(hDevInfo);
 
-    return true;
+    return okay;
 }
 
 bool DeviceMgr::ResetDevice(HDEVINFO devs, PSP_DEVINFO_DATA devInfo)

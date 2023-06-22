@@ -51,7 +51,7 @@ void ServiceManager::DeleteServiceObject(const tstring &ServiceName)
     WaitForServiceStop(schService);
     if (!DeleteService(schService))
     {
-        throw UsbDkServiceManagerFailedException(TEXT("DeleteService failed"));
+        // throw UsbDkServiceManagerFailedException(TEXT("DeleteService failed"));
     }
 }
 
@@ -75,7 +75,7 @@ void ServiceManager::StopServiceObject(const tstring & ServiceName)
 void ServiceManager::WaitForServiceStop(const SCMHandleHolder &schService)
 {
     static const DWORD SERVICE_STOP_WAIT_QUANTUM = 50;
-    static const DWORD SERVICE_STOP_ITERATIONS = 20000 / 50; //Total timeout is 20 seconds
+    static const DWORD SERVICE_STOP_ITERATIONS = 2000 / 50; //Total timeout is 2 seconds
 
     SERVICE_STATUS_PROCESS ssp;
     DWORD iterationNumber = 0;
