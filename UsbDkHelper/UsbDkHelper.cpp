@@ -80,6 +80,12 @@ InstallResult UsbDk_InstallDriver(void)
     }
 }
 
+extern "C" void USBDK_InstallDriverOrThrowException(bool& reboot) {
+    UsbDkInstaller installer;
+    bool NeedRollBack = false;
+    reboot = !installer.Install(NeedRollBack);
+}
+
 BOOL UsbDk_UninstallDriver(void)
 {
     try

@@ -338,7 +338,7 @@ void UsbDkInstaller::verifyDriverCanStart()
             {
                 UNREFERENCED_PARAMETER(e);
             }
-            throw UsbDkInstallerAbortedException();
+            throw;
         }
     }
 }
