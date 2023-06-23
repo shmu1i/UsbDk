@@ -366,12 +366,15 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
         return;
     }
 
-    for (auto AttachedPDO = LowerPDO->DeviceObjectExtension->AttachedTo;
-         AttachedPDO;
-         AttachedPDO = AttachedPDO->DeviceObjectExtension->AttachedTo)
+    for (auto AttachedPDO = IoGetLowerDeviceObject(LowerPDO); AttachedPDO; )
     {
+        PDEVICE_OBJECT Derefer = AttachedPDO;
         if (UsbDkGetWdmDeviceDriverKeyName(AttachedPDO, &HubID))
-            break;
+            AttachedPDO = nullptr;
+        else
+            AttachedPDO = IoGetLowerDeviceObject(AttachedPDO);
+
+        ObDereferenceObject(Derefer);
     }
 
     if (HubID->empty()) {
@@ -710,10 +713,27 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
         return true;
     }
 
+    auto LowerPDO = [](PDEVICE_OBJECT pdo) -> PDEVICE_OBJECT {
+        PDEVICE_OBJECT previous = nullptr;
+        for (auto next = IoGetLowerDeviceObject(pdo); next; next = IoGetLowerDeviceObject(next))
+        {
+            if (previous)
+                ObDereferenceObject(previous);
+
+            previous = next;
+        };
+        return previous;
+    } (DevObj);
+
     CObjHolder<CRegText> HubID;
-    if (!m_Strategy->GetControlDevice()->GetHubIDByPDO(DevObj, &HubID))
+    auto success = m_Strategy->GetControlDevice()->GetHubIDByPDO(LowerPDO ? LowerPDO : DevObj, &HubID);
+
+    if (LowerPDO)
+        ObDereferenceObject(LowerPDO);
+
+    if (!success)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot read HubID.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot find HubID for DevObj: %p, LowerPDO: %p", DevObj, LowerPDO);
         return false;
     }
     HubID->Dump();
