@@ -75,6 +75,7 @@ typedef struct tag_USB_DK_TRANSFER_REQUEST
     PVOID64 Buffer;
     ULONG64 BufferLength;
     ULONG64 TransferType;
+    ULONG64 IsochronousStartFrame;
     ULONG64 IsochronousPacketsArraySize;
     PVOID64 IsochronousPacketsArray;
 

@@ -94,6 +94,8 @@ using USBDK_REDIRECTOR_REQUEST_CONTEXT = struct : public USBDK_TARGET_REQUEST_CO
     WDF_USB_CONTROL_SETUP_PACKET SetupPacket;
     UsbDkTransferDirection Direction;
 
+    ULONG64 IsochronousStartFrame;
+
     WDFMEMORY LockedIsochronousPacketsArray;
     WDFMEMORY LockedIsochronousResultsArray;
 };
@@ -130,6 +132,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRW(CRedirectorRequest &WdfRe
     auto Context = WdfRequest.Context();
     Context->EndpointAddress = TransferRequest->EndpointAddress;
     Context->TransferType = static_cast<USB_DK_TRANSFER_TYPE>(TransferRequest->TransferType);
+    Context->IsochronousStartFrame = TransferRequest->IsochronousStartFrame;
 
     status = WdfRequest.FetchOutputObject(Context->GenResult);
     if (!NT_SUCCESS(status))
@@ -501,6 +504,7 @@ void CUsbDkRedirectorStrategy::WritePipe(WDFREQUEST Request)
             m_Target.WriteIsochronousPipeAsync(WdfRequest.Detach(),
                                                Context->EndpointAddress,
                                                Context->LockedBuffer,
+                                               Context->IsochronousStartFrame,
                                                PacketSizesArray,
                                                PacketSizesArray.ArraySize(),
                                                IsoRWCompletion);
@@ -595,6 +599,7 @@ void CUsbDkRedirectorStrategy::ReadPipe(WDFREQUEST Request)
             m_Target.ReadIsochronousPipeAsync(WdfRequest.Detach(),
                                               Context->EndpointAddress,
                                               Context->LockedBuffer,
+                                              Context->IsochronousStartFrame,
                                               PacketSizesArray,
                                               PacketSizesArray.ArraySize(),
                                               IsoRWCompletion);
