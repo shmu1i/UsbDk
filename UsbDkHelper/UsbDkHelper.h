@@ -263,6 +263,17 @@ extern "C" {
     *
     */
     DLL BOOL             UsbDk_SetRedirectorSystemHandle(HANDLE DeviceHandle, HANDLE SystemHandle);
+
+    /* Get current bus time
+    *
+    * @params
+    *    IN  - DeviceHandle  - handle of target USB device
+    *
+    * @return
+    *  Current bus time or 0 on error
+    *
+    */
+    DLL ULONG64          UsbDk_QueryBusTime(HANDLE DeviceHandle);
 #ifdef __cplusplus
 }
 #endif

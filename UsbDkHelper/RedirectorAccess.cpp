@@ -83,6 +83,19 @@ void UsbDkRedirectorAccess::ResetDevice()
     IoctlSync(IOCTL_USBDK_DEVICE_RESET_DEVICE);
 }
 
+ULONG64 UsbDkRedirectorAccess::QueryBusTime()
+{
+    ULONG64 busTime = 0;
+    DWORD returned = 0;
+
+    DeviceIoControl(m_hDriver, IOCTL_USBDK_QUERY_BUS_TIME, NULL, 0, &busTime, sizeof(busTime), &returned, NULL);
+
+    if (const auto gle = GetLastError())
+        throw UsbDkDriverFileException(TEXT("DeviceIoControl(IOCTL_USBDK_QUERY_BUS_TIME) failed"), gle);
+
+    return busTime;
+}
+
 bool UsbDkRedirectorAccess::IoctlSync(DWORD Code,
                                       bool ShortBufferOk,
                                       LPVOID InBuffer,

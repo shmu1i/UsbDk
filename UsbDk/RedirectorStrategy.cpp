@@ -385,6 +385,22 @@ void CUsbDkRedirectorStrategy::IoDeviceControl(WDFREQUEST Request,
             WritePipe(Request);
             break;
         }
+        case IOCTL_USBDK_QUERY_BUS_TIME:
+        {
+            CRedirectorRequest WdfRequest(Request);
+            ULONG64* busTime = NULL;
+
+            auto status = WdfRequestRetrieveOutputBuffer(WdfRequest, sizeof(ULONG64), (PVOID*)&busTime, NULL);
+
+            if (NT_SUCCESS(status)) {
+                *busTime = m_Target.QueryBusTime();
+
+                WdfRequest.SetOutputDataLen(sizeof(ULONG64));
+            }
+
+            WdfRequest.SetStatus(status);
+            return;
+        }
     }
 }
 

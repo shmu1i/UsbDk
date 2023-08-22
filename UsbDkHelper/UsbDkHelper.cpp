@@ -314,6 +314,20 @@ BOOL UsbDk_SetRedirectorSystemHandle(HANDLE DeviceHandle, HANDLE SystemHandle)
     return false;
 }
 
+ULONG64 UsbDk_QueryBusTime(HANDLE DeviceHandle)
+{
+    try
+    {
+        return unpackHandle<REDIRECTED_DEVICE_HANDLE>(DeviceHandle)->RedirectorAccess->QueryBusTime();
+    }
+    catch (const exception& e)
+    {
+        printExceptionString(e.what());
+    }
+
+    return 0;
+}
+
 HANDLE UsbDk_CreateHiderHandle()
 {
     try

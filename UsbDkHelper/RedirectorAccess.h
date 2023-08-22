@@ -51,6 +51,7 @@ public:
     void ResetPipe(ULONG64 PipeAddress, LPOVERLAPPED Overlapped);
     void SetAltsetting(ULONG64 InterfaceIdx, ULONG64 AltSettingIdx);
     void ResetDevice();
+    ULONG64 QueryBusTime();
 
     HANDLE GetSystemHandle() const
     { return m_hDriver; }
