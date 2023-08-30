@@ -339,6 +339,7 @@ void CUsbDkRedirectorStrategy::DoControlTransfer(CRedirectorRequest &WdfRequest,
                                          auto UsbdStatus = usbCompletionParams->UsbdStatus;
                                          CRedirectorRequest WdfRequest(Request);
 
+                                         /*
                                          // Do not report STALL conditions on control pipe.
                                          //
                                          // STALL condition on control pipe cleared automatically
@@ -350,6 +351,7 @@ void CUsbDkRedirectorStrategy::DoControlTransfer(CRedirectorRequest &WdfRequest,
                                              status = STATUS_SUCCESS;
                                              UsbdStatus = USBD_STATUS_INTERNAL_HC_ERROR;
                                          }
+                                         */
 
                                          if (!NT_SUCCESS(status) || !USBD_SUCCESS(UsbdStatus))
                                          {
