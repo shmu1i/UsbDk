@@ -45,7 +45,7 @@ NTSTATUS CUsbDkHiderDeviceInit::Create(WDFDRIVER Driver)
     auto DeviceInit = WdfControlDeviceInitAllocate(Driver, &SDDL_DEVOBJ_SYS_ALL_ADM_RWX_WORLD_RWX_RES_RWX);
     if (DeviceInit == nullptr)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! Cannot allocate DeviceInit");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! Cannot allocate DeviceInit");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -134,7 +134,7 @@ void CUsbDkHiderDeviceQueue::DeviceControl(WDFQUEUE Queue,
         }
         default:
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_HIDERDEVICE, "Wrong IoControlCode 0x%X\n", IoControlCode);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_HIDERDEVICE, "Wrong IoControlCode 0x%X\n", IoControlCode);
             WdfRequest.SetStatus(STATUS_INVALID_DEVICE_REQUEST);
             break;
         }
@@ -151,7 +151,7 @@ void CUsbDkHiderDevice::ContextCleanup(_In_ WDFOBJECT DeviceObject)
 {
     PAGED_CODE();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_HIDERDEVICE, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_HIDERDEVICE, "%!FUNC! Entry");
 
     auto deviceContext = UsbDkHiderGetContext(DeviceObject);
     delete deviceContext->UsbDkHider;

@@ -31,7 +31,7 @@
 
 void CUsbDkChildDevice::Dump()
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Child device 0x%p:", m_PDO);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Child device 0x%p:", m_PDO);
     m_DeviceID->Dump();
     m_InstanceID->Dump();
 }
@@ -66,14 +66,14 @@ NTSTATUS CUsbDkFilterDeviceInit::Configure(ULONG InstanceNumber)
     auto status = DeviceName.Create(TEXT("\\Device\\UsbDkFilter"), InstanceNumber);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Failed to allocate filter device name (%!STATUS!)", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to allocate filter device name (%!STATUS!)", status);
         return status;
     }
 
     status = SetName(*DeviceName);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! SetName failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! SetName failed %!STATUS!", status);
         return status;
     }
 
@@ -216,13 +216,13 @@ public:
 
     void Dump() const
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Array size: %lu (ptr: %p)",
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Array size: %lu (ptr: %p)",
                     (m_Relations != nullptr) ? m_Relations->Count : 0, m_Relations);
 
         ULONG Index = 0;
         ForEach([&Index](PDEVICE_OBJECT PDO) -> bool
                 {
-                    TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! #%lu: %p", Index++, PDO);
+                    TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! #%lu: %p", Index++, PDO);
                     return true;
                 });
     }
@@ -290,16 +290,16 @@ NTSTATUS CUsbDkHubFilterStrategy::PNPPreProcess(PIRP Irp)
 
                                         if (!NT_SUCCESS(status))
                                         {
-                                            TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Failed to create device relations object: %!STATUS!", status);
+                                            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to create device relations object: %!STATUS!", status);
                                             return STATUS_SUCCESS;
                                         }
 
-                                        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Starting relations array processing:");
+                                        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Starting relations array processing:");
                                         Relations.Dump();
 
                                         DropRemovedDevices(Relations);
                                         AddNewDevices(Relations);
-                                        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Finished relations array processing");
+                                        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Finished relations array processing");
                                         return STATUS_SUCCESS;
                                     });
     }
@@ -315,7 +315,7 @@ void CUsbDkHubFilterStrategy::DropRemovedDevices(const CDeviceRelations &Relatio
     Children().ForEachDetachedIf([&Relations](CUsbDkChildDevice *Child) { return !Relations.Contains(*Child); },
                                  [&ToBeDeleted](CUsbDkChildDevice *Child) -> bool
                                  {
-                                     TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Deleting child object:");
+                                     TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Deleting child object:");
                                      Child->Dump();
                                      ToBeDeleted.PushBack(Child);
                                      return true;
@@ -333,7 +333,7 @@ bool CUsbDkHubFilterStrategy::IsChildRegistered(PDEVICE_OBJECT PDO)
                                  {
                                      if (Child->Match(PDO))
                                      {
-                                         TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! PDO %p already registered:", PDO);
+                                         TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! PDO %p already registered:", PDO);
                                          Child->Dump();
                                          return true;
                                      }
@@ -363,32 +363,32 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
     CObjHolder<CRegText> InstanceID;
     if (!UsbDkGetWdmDeviceIdentity(PDO, &DevID, &InstanceID))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot query device identity");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot query device identity");
         return;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Registering new child (PDO: %p):", PDO);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Registering new child (PDO: %p):", PDO);
     DevID->Dump();
     InstanceID->Dump();
 
     // Not a USB device -> do not register
     if (!DevID->MatchPrefix(L"USB\\"))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Not a usb device, skip child registration");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Not a usb device, skip child registration");
         return;
     }
 
     auto Port = pdoAccess.GetAddress();
     if (Port == CWdmDeviceAccess::NO_ADDRESS)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot read device port number");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot read device port number");
         return;
     }
 
     CObjHolder<CRegText> PortString = pdoAccess.GetAddressString();
     if (PortString->empty())
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot get device port number string");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot get device port number string");
         return;
     }
 
@@ -396,7 +396,7 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
     PDEVICE_OBJECT LowerPDO = m_Owner->LowerDeviceObject();
     if (!LowerPDO)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! No lower PDO.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! No lower PDO.");
         return;
     }
 
@@ -412,7 +412,7 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
     }
 
     if (HubID->empty()) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot read HubID (DriverKeyName)");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot read HubID (DriverKeyName)");
         return;
     }
 
@@ -421,7 +421,7 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
     auto Speed = UsbDkWdmUsbDeviceGetSpeed(PDO, m_Owner->GetDriverObject());
     if (Speed == NoSpeed)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot query device speed");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot query device speed");
         return;
     }
 
@@ -429,7 +429,7 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
     auto status = pdoAccess.GetDeviceDescriptor(DevDescriptor);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot query device descriptor");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot query device descriptor");
         return;
     }
 
@@ -437,7 +437,7 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
     // recheck on Win7, superspeed indication as on Win8 might be not available
     if (Speed == HighSpeed && DevDescriptor.bcdUSB >= 0x300)
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! superspeed assigned according to BCD field");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! superspeed assigned according to BCD field");
         Speed = SuperSpeed;
     }
 #endif
@@ -446,13 +446,13 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
 
     if (!CfgDescriptors.Create())
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot create descriptors cache");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot create descriptors cache");
         return;
     }
 
     if (!FetchConfigurationDescriptors(pdoAccess, CfgDescriptors))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot fetch configuration descriptors");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot fetch configuration descriptors");
         return;
     }
 
@@ -461,7 +461,7 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
 
     if (Device == nullptr)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot allocate child device instance");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot allocate child device instance");
         return;
     }
 
@@ -485,7 +485,7 @@ bool CUsbDkHubFilterStrategy::FetchConfigurationDescriptors(CWdmUsbDeviceAccess 
 
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Failed to read header for configuration descriptor %llu: %!STATUS!", i, status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to read header for configuration descriptor %llu: %!STATUS!", i, status);
             return false;
         }
 
@@ -497,7 +497,7 @@ bool CUsbDkHubFilterStrategy::FetchConfigurationDescriptors(CWdmUsbDeviceAccess 
                                                                                                    Descriptor.wTotalLength);
                                                 if (!NT_SUCCESS(status))
                                                 {
-                                                    TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Failed to read configuration descriptor %llu: %!STATUS!", i, status);
+                                                    TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to read configuration descriptor %llu: %!STATUS!", i, status);
                                                     return false;
                                                 }
                                                 return true;
@@ -516,16 +516,16 @@ void CUsbDkHubFilterStrategy::ApplyRedirectionPolicy(CUsbDkChildDevice &Device)
     {
         if (Device.AttachToDeviceStack())
         {
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Attached to device stack for 0x%p", Device.PDO());
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Attached to device stack for 0x%p", Device.PDO());
         }
         else
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Failed to attach to device stack for 0x%p", Device.PDO());
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to attach to device stack for 0x%p", Device.PDO());
         }
     }
     else
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Not attaching to device stack for 0x%p", Device.PDO());
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Not attaching to device stack for 0x%p", Device.PDO());
     }
 }
 
@@ -541,7 +541,7 @@ bool CUsbDkChildDevice::AttachToDeviceStack()
     auto Status = DriverObj->DriverExtension->AddDevice(DriverObj, m_PDO);
     if (!NT_SUCCESS(Status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Failed to attach to device stack");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to attach to device stack");
         return false;
     }
 
@@ -553,12 +553,12 @@ void CUsbDkFilterDevice::OnFileCreate(WDFREQUEST Request)
     CWdfRequest r(Request);
     WdfRequestFormatRequestUsingCurrentType(Request);
     // in the log we'll see which process created the file
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC!");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC!");
     r.SendWithCompletion(IOTarget(), [](WDFREQUEST Request, WDFIOTARGET Target, PWDF_REQUEST_COMPLETION_PARAMS Params, WDFCONTEXT Context)
     {
         UNREFERENCED_PARAMETER(Target);
         CWdfRequest r(Request);
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%s: completed", (LPCSTR)Context);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%s: completed", (LPCSTR)Context);
         r.SetStatus(Params->IoStatus.Status);
         r.SetBytesWritten(Params->IoStatus.Information);
     },
@@ -577,7 +577,7 @@ NTSTATUS CUsbDkFilterDevice::AttachToStack(WDFDRIVER Driver)
         return status;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Attached");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Attached");
     return STATUS_SUCCESS;
 }
 
@@ -587,20 +587,20 @@ NTSTATUS CUsbDkFilterDevice::DefineStrategy()
     auto status = m_Strategy->Create(this);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Failed to create null strategy");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to create null strategy");
         return status;
     }
 
     if (!m_Strategy.SelectStrategy(LowerDeviceObject()))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Not attached");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Not attached");
         return STATUS_NOT_SUPPORTED;
     }
 
     status = m_Strategy->Create(this);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Failed to create strategy");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to create strategy");
         return status;
     }
 
@@ -611,12 +611,12 @@ NTSTATUS CUsbDkFilterDevice::Create(PWDFDEVICE_INIT DevInit)
 {
     CUsbDkFilterDeviceInit DeviceInit(DevInit);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Entry");
 
     auto status = DeviceInit.Configure(GetInstanceNumber());
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Failed to create device init");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to create device init");
         return status;
     }
 
@@ -627,12 +627,12 @@ NTSTATUS CUsbDkFilterDevice::Create(PWDFDEVICE_INIT DevInit)
     status = CWdfDevice::Create(DeviceInit, attr);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Failed to create device");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Failed to create device");
         return status;
     }
     if (!LowerDeviceObject())
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! No lower device, skip");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! No lower device, skip");
         return STATUS_INVALID_DEVICE_STATE;
     }
 
@@ -646,7 +646,7 @@ void CUsbDkFilterDevice::ContextCleanup(_In_ WDFOBJECT DeviceObject)
 {
     PAGED_CODE();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Entry");
 
     auto deviceContext = UsbDkFilterGetContext(DeviceObject);
     if (const auto UsbDkFilter = deviceContext->UsbDkFilter) {
@@ -663,7 +663,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     CObjHolder<CRegText> DevID;
     if (!UsbDkGetWdmDeviceIdentity(DevObj, &DevID, nullptr))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot query device ID");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot query device ID");
         return false;
     }
 
@@ -676,7 +676,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
          DevID->Match(L"NUSB3\\ROOT_HUB30")     ||
          DevID->Match(L"IUSB3\\ROOT_HUB30")))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Assigning HUB strategy");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Assigning HUB strategy");
         m_Strategy->Delete();
         m_Strategy = &m_HubStrategy;
         return true;
@@ -685,7 +685,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     // Not a USB device -> do not filter
     if (!DevID->MatchPrefix(L"USB\\"))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Not a usb device, no strategy assigned");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Not a usb device, no strategy assigned");
         return false;
     }
 
@@ -693,7 +693,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     CObjHolder<CRegText> InstanceID;
     if (!UsbDkGetWdmDeviceIdentity(DevObj, nullptr, &InstanceID))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot query instance ID");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot query instance ID");
         return false;
     }
 
@@ -712,7 +712,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
         // we are dealing with USB hub and WDF attached us to its stack
         // automatically because UsbDk is registered in PNP manager as
         // USB hubs filter
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! No cached device descriptor, assigning hub strategy");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! No cached device descriptor, assigning hub strategy");
         m_Strategy->Delete();
         m_Strategy = &m_HubStrategy;
         return true;
@@ -721,7 +721,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     // Device class is HUB -> Hub strategy
     if (DevDescr.bDeviceClass == USB_DEVICE_CLASS_HUB)
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Device class is HUB, assigning hub strategy");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Device class is HUB, assigning hub strategy");
         m_Strategy->Delete();
         m_Strategy = &m_HubStrategy;
         return true;
@@ -730,7 +730,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     // Configuration tells to redirect -> redirector strategy
     if (m_Strategy->GetControlDevice()->ShouldRedirect(ID))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Assigning redirected USB device strategy");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Assigning redirected USB device strategy");
         m_DevStrategy.SetDeviceID(DevID.detach());
         m_DevStrategy.SetInstanceID(InstanceID.detach());
         m_Strategy->Delete();
@@ -741,7 +741,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     // Should be hidden -> hider strategy
     if (m_Strategy->GetControlDevice()->ShouldHide(ID))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Assigning hidden USB device strategy");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Assigning hidden USB device strategy");
         m_Strategy->Delete();
         m_Strategy = &m_HiderStrategy;
         return true;
@@ -767,7 +767,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
 
     if (!success)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot find HubID for DevObj: %p, LowerPDO: %p", DevObj, LowerPDO);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot find HubID for DevObj: %p, LowerPDO: %p", DevObj, LowerPDO);
         return false;
     }
     HubID->Dump();
@@ -776,7 +776,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     CObjHolder<CRegText> PortString = pdoAccess.GetAddressString();
     if (PortString->empty())
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! Cannot get device port string.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot get device port string.");
         return false;
     }
 
@@ -786,7 +786,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     // Configuration tells to redirect -> redirector strategy
     if (m_Strategy->GetControlDevice()->ShouldRedirect(PortID))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Assigning redirected USB device strategy");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Assigning redirected USB device strategy");
         m_DevStrategy.SetDeviceID(HubID.detach());
         m_DevStrategy.SetInstanceID(PortString.detach());
         m_Strategy->Delete();
@@ -795,7 +795,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     }
 
     // No strategy
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "%!FUNC! Do not redirect or already redirected device, no strategy assigned");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Do not redirect or already redirected device, no strategy assigned");
 
     return false;
 }
@@ -810,24 +810,24 @@ size_t CUsbDkFilterDevice::CStrategist::GetRequestContextSize()
 static ULONG InterfaceTypeMask(UCHAR bClass) {
     switch (bClass) {
     case USB_DEVICE_CLASS_AUDIO:
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "Class 0x%X -> audio", bClass);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "Class 0x%X -> audio", bClass);
         return 1 << USB_DEVICE_CLASS_AUDIO;
     case USB_DEVICE_CLASS_COMMUNICATIONS:
     case USB_DEVICE_CLASS_CDC_DATA:
     case USB_DEVICE_CLASS_WIRELESS_CONTROLLER:
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "Class 0x%X -> network", bClass);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "Class 0x%X -> network", bClass);
         return 1 << USB_DEVICE_CLASS_COMMUNICATIONS;
     case USB_DEVICE_CLASS_PRINTER:
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "Class 0x%X -> printer", bClass);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "Class 0x%X -> printer", bClass);
         return 1 << USB_DEVICE_CLASS_PRINTER;
     case USB_DEVICE_CLASS_STORAGE:
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "Class 0x%X -> storage", bClass);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "Class 0x%X -> storage", bClass);
         return 1 << USB_DEVICE_CLASS_STORAGE;
     case USB_DEVICE_CLASS_VIDEO:
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "Class 0x%X -> video", bClass);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "Class 0x%X -> video", bClass);
         return 1 << USB_DEVICE_CLASS_VIDEO;
     case USB_DEVICE_CLASS_AUDIO_VIDEO:
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "Class 0x%X -> audio/video", bClass);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "Class 0x%X -> audio/video", bClass);
         return (1 << USB_DEVICE_CLASS_VIDEO) |
                (1 << USB_DEVICE_CLASS_AUDIO);
     case USB_DEVICE_CLASS_HUB:
@@ -916,5 +916,5 @@ void CUsbDkChildDevice::DetermineDeviceClasses()
         m_ClassMaskForExtHider &= determinativeMask;
     }
 #endif
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_FILTERDEVICE, "Class mask %08X", m_ClassMaskForExtHider);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "Class mask %08X", m_ClassMaskForExtHider);
 }

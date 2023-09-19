@@ -51,7 +51,7 @@ NTSTATUS CPreAllocatedDeviceInit::SetName(const UNICODE_STRING &Name)
     auto status = WdfDeviceInitAssignName(m_DeviceInit, &Name);
 
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
     }
 
     return status;
@@ -94,7 +94,7 @@ NTSTATUS CPreAllocatedDeviceInit::SetPreprocessCallback(PFN_WDFDEVICE_WDM_IRP_PR
                                                               NumMinorFunctions);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! status: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! status: %!STATUS!", status);
     }
     return status;
 }
@@ -103,7 +103,7 @@ NTSTATUS CWdfDevice::CreateSymLink(const UNICODE_STRING &Name)
 {
     auto status = WdfDeviceCreateSymbolicLink(m_Device, &Name);
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
     }
     return status;
 }
@@ -116,13 +116,13 @@ NTSTATUS CWdfDevice::Create(CPreAllocatedDeviceInit &DeviceInit, WDF_OBJECT_ATTR
     if (!NT_SUCCESS(status))
     {
         DeviceInit.Attach(DevInitObj);
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
     }
 
     status = CacheDeviceName();
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! Device name caching failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! Device name caching failed %!STATUS!", status);
     }
 
     m_LowerDeviceObj = IoGetLowerDeviceObject(WdmObject());
@@ -143,7 +143,7 @@ NTSTATUS CWdfQueue::Create(CWdfDevice &Device)
 
     auto status = Device.AddQueue(QueueConfig, Attributes, m_Queue);
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
     }
 
     return status;
@@ -153,7 +153,7 @@ NTSTATUS CWdfDevice::AddQueue(WDF_IO_QUEUE_CONFIG &Config, WDF_OBJECT_ATTRIBUTES
 {
     auto status = WdfIoQueueCreate(m_Device, &Config, &Attributes, &Queue);
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! failed %!STATUS!", status);
     }
 
     return status;
@@ -171,7 +171,7 @@ void CWdfSpecificQueue::InitConfig(WDF_IO_QUEUE_CONFIG &QueueConfig)
 
 CWdfDevice::~CWdfDevice()
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_WDFDEVICE, "%!FUNC! Deleting device %wZ", m_CachedName);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_WDFDEVICE, "%!FUNC! Deleting device %wZ", m_CachedName);
     if (m_LowerDeviceObj)
     {
         ObDereferenceObject(m_LowerDeviceObj);
@@ -184,14 +184,14 @@ NTSTATUS CWdfDevice::CacheDeviceName()
     auto status = WdfStringCreate(NULL, WDF_NO_OBJECT_ATTRIBUTES, &deviceName);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! WdfStringCreate failed. %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! WdfStringCreate failed. %!STATUS!", status);
         return status;
     }
 
     status = WdfDeviceRetrieveDeviceName(m_Device, deviceName);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! WdfDeviceRetrieveDeviceName failed. %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! WdfDeviceRetrieveDeviceName failed. %!STATUS!", status);
         WdfObjectDelete(deviceName);
         return status;
     }
@@ -202,12 +202,12 @@ NTSTATUS CWdfDevice::CacheDeviceName()
     status = m_CachedName.Create(&UnicodeDeviceName);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! CString creation failed. %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! CString creation failed. %!STATUS!", status);
         WdfObjectDelete(deviceName);
         return status;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_WDFDEVICE, "%!FUNC! Newly created device name is %wZ", &UnicodeDeviceName);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_WDFDEVICE, "%!FUNC! Newly created device name is %wZ", &UnicodeDeviceName);
     WdfObjectDelete(deviceName);
     return STATUS_SUCCESS;
 }
@@ -245,7 +245,7 @@ NTSTATUS CWdfDevice::CreateUserModeHandle(HANDLE RequestorProcess, PHANDLE Objec
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! ZwDuplicateObject failed. %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! ZwDuplicateObject failed. %!STATUS!", status);
         ZwClose(KernelHandle);
     }
 

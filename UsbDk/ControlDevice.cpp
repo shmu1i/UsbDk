@@ -46,7 +46,7 @@ NTSTATUS CUsbDkControlDeviceInit::Create(WDFDRIVER Driver)
     auto DeviceInit = WdfControlDeviceInitAllocate(Driver, &SDDL_DEVOBJ_SYS_ALL_ADM_RWX_WORLD_RWX_RES_RWX);
     if (DeviceInit == nullptr)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! Cannot allocate DeviceInit");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! Cannot allocate DeviceInit");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -112,7 +112,7 @@ void CUsbDkControlDeviceQueue::DeviceControl(WDFQUEUE Queue,
         }
         default:
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "Wrong IoControlCode 0x%X\n", IoControlCode);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "Wrong IoControlCode 0x%X\n", IoControlCode);
             WdfRequest.SetStatus(STATUS_INVALID_DEVICE_REQUEST);
             break;
         }
@@ -212,7 +212,7 @@ static void CUsbDkControlDeviceQueue::DoUSBDeviceOp(CControlRequest &Request,
     auto status = Request.FetchOutputObject(output, &outputLength);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Failed to fetch output buffer. %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Failed to fetch output buffer. %!STATUS!", status);
         Request.SetOutputDataLen(0);
         Request.SetStatus(status);
         return;
@@ -228,7 +228,7 @@ static void CUsbDkControlDeviceQueue::DoUSBDeviceOp(CControlRequest &Request,
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Fail with code: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Fail with code: %!STATUS!", status);
     }
 
     Request.SetOutputDataLen(outputLength);
@@ -247,7 +247,7 @@ void CUsbDkControlDeviceQueue::DoUSBDeviceOp(CControlRequest &Request, WDFQUEUE 
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Fail with code: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Fail with code: %!STATUS!", status);
     }
 
     Request.SetStatus(status);
@@ -322,12 +322,12 @@ bool CUsbDkControlDevice::ShouldHideDevice(CUsbDkChildDevice &Device) const
     const auto &HideVisitor = [&DevDescriptor, &Hide](CUsbDkHideRule *Entry) -> bool
     {
         Entry->Dump(TRACE_LEVEL_VERBOSE);
-        TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_FILTERDEVICE,
+        TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_USBDK_FILTERDEVICE,
             "checking old hide rules %X:%X", DevDescriptor.idVendor, DevDescriptor.idProduct);
         if (Entry->Match(DevDescriptor))
         {
             Hide = Entry->ShouldHide();
-            TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_FILTERDEVICE, "Match: hide = %d", Hide);
+            TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_USBDK_FILTERDEVICE, "Match: hide = %d", Hide);
             return !Entry->ForceDecision();
         }
 
@@ -337,12 +337,12 @@ bool CUsbDkControlDevice::ShouldHideDevice(CUsbDkChildDevice &Device) const
     const auto &HideVisitorExt = [&DevDescriptor, &Hide, classes](CUsbDkHideRule *Entry) -> bool
     {
         Entry->Dump(TRACE_LEVEL_VERBOSE);
-        TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_FILTERDEVICE,
+        TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_USBDK_FILTERDEVICE,
             "checking ext hide rules %X:%X", DevDescriptor.idVendor, DevDescriptor.idProduct);
         if (Entry->Match(classes, DevDescriptor))
         {
             Hide = Entry->ShouldHide();
-            TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_FILTERDEVICE, "Match: hide = %d", Hide);
+            TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_USBDK_FILTERDEVICE, "Match: hide = %d", Hide);
             return !Entry->ForceDecision();
         }
 
@@ -384,7 +384,7 @@ bool CUsbDkControlDevice::EnumerateDevices(USB_DK_DEVICE_INFO *outBuff, size_t n
                                {
                                    if (numberExistingDevices == numberAllocatedDevices)
                                    {
-                                       TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! FAILED! Number existing devices is more than allocated buffer!");
+                                       TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! FAILED! Number existing devices is more than allocated buffer!");
                                        return false;
                                    }
 
@@ -451,7 +451,7 @@ PDEVICE_OBJECT CUsbDkControlDevice::GetPDOByDeviceID(const USB_DK_DEVICE_ID &Dev
 
     if (PDO == nullptr)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! PDO was not found");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! PDO was not found");
     }
 
     return PDO;
@@ -483,7 +483,7 @@ bool CUsbDkControlDevice::GetHubIDByPDO(const PDEVICE_OBJECT PDO, CObjHolder<CRe
             *HubID = string;
             return true;
         }
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC!  Can't allocate memory for HubID.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC!  Can't allocate memory for HubID.");
     }
 
     return false;
@@ -527,7 +527,7 @@ void CUsbDkControlDevice::ContextCleanup(_In_ WDFOBJECT DeviceObject)
 {
     PAGED_CODE();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Entry");
 
     auto deviceContext = UsbDkControlGetContext(DeviceObject);
     delete deviceContext->UsbDkControl;
@@ -550,7 +550,7 @@ static void DevicePortCtrlClose(_In_ WDFFILEOBJECT fileObject)
 
         auto status = UsbDkControl->RemoveRedirect(ID, true);
         if (!NT_SUCCESS(status))
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERDEVICE, "%!FUNC! RemoveRedirect failed: %!STATUS!", status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! RemoveRedirect failed: %!STATUS!", status);
     }
 
     fileCtx->UsbDkControl->Release();
@@ -561,7 +561,7 @@ NTSTATUS CUsbDkControlDevice::CreatePortControlDevice(WDFDRIVER Driver)
     auto DeviceInit = WdfControlDeviceInitAllocate(Driver, &SDDL_DEVOBJ_SYS_ALL_ADM_RWX_WORLD_RWX_RES_RWX);
     if (!DeviceInit)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Cannot allocate DeviceInit");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Cannot allocate DeviceInit");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -582,14 +582,14 @@ NTSTATUS CUsbDkControlDevice::CreatePortControlDevice(WDFDRIVER Driver)
     auto status = WdfDeviceInitAssignName(DeviceInit, &ntDeviceName);
     if (!NT_SUCCESS(status)) {
         WdfDeviceInitFree(DeviceInit);
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! WdfDeviceInitAssignName failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! WdfDeviceInitAssignName failed %!STATUS!", status);
         return status;
     }
 
     status = WdfDeviceCreate(&DeviceInit, nullptr, &m_DevicePortCtrl);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! WdfDeviceCreate failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! WdfDeviceCreate failed %!STATUS!", status);
         WdfDeviceInitFree(DeviceInit);
         return status;
     }
@@ -624,14 +624,14 @@ NTSTATUS CUsbDkControlDevice::Create(WDFDRIVER Driver)
     status = CreatePortControlDevice(Driver);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Can't create port control device. %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Can't create port control device. %!STATUS!", status);
         return status;
     }
 
     CObjHolder<CUsbDkHiderDevice> HiderDevice(new CUsbDkHiderDevice());
     if (!HiderDevice)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Hider device allocation failed");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Hider device allocation failed");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -682,7 +682,7 @@ void CUsbDkControlDevice::IoInCallerContext(WDFDEVICE Device, WDFREQUEST Request
 
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! UsbDkCreateCurrentProcessHandle failed, %!STATUS!", status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! UsbDkCreateCurrentProcessHandle failed, %!STATUS!", status);
 
             CtrlRequest.SetStatus(status);
             CtrlRequest.SetOutputDataLen(0);
@@ -694,7 +694,7 @@ void CUsbDkControlDevice::IoInCallerContext(WDFDEVICE Device, WDFREQUEST Request
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! WdfDeviceEnqueueRequest failed, %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! WdfDeviceEnqueueRequest failed, %!STATUS!", status);
 
         CtrlRequest.SetStatus(status);
         CtrlRequest.SetOutputDataLen(0);
@@ -710,7 +710,7 @@ bool CUsbDkControlDeviceQueue::FetchBuffersForAddRedirectRequest(CControlRequest
     auto status = WdfRequest.FetchInputObject(DeviceId, &DeviceIdLen);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! FetchInputObject failed, %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! FetchInputObject failed, %!STATUS!", status);
         WdfRequest.SetStatus(status);
         WdfRequest.SetOutputDataLen(0);
         return false;
@@ -718,7 +718,7 @@ bool CUsbDkControlDeviceQueue::FetchBuffersForAddRedirectRequest(CControlRequest
 
     if (DeviceIdLen != sizeof(USB_DK_DEVICE_ID))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Wrong request buffer size (%llu, expected %llu)",
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Wrong request buffer size (%llu, expected %llu)",
                     DeviceIdLen, sizeof(USB_DK_DEVICE_ID));
         WdfRequest.SetStatus(STATUS_INVALID_BUFFER_SIZE);
         WdfRequest.SetOutputDataLen(0);
@@ -729,7 +729,7 @@ bool CUsbDkControlDeviceQueue::FetchBuffersForAddRedirectRequest(CControlRequest
     status = WdfRequest.FetchOutputObject(RedirectorDevice, &RedirectorDeviceLength);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Failed to fetch output buffer. %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Failed to fetch output buffer. %!STATUS!", status);
         WdfRequest.SetOutputDataLen(0);
         WdfRequest.SetStatus(status);
         return false;
@@ -737,7 +737,7 @@ bool CUsbDkControlDeviceQueue::FetchBuffersForAddRedirectRequest(CControlRequest
 
     if (RedirectorDeviceLength != sizeof(ULONG64))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Wrong request input buffer size (%llu, expected %llu)",
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Wrong request input buffer size (%llu, expected %llu)",
             RedirectorDeviceLength, sizeof(ULONG64));
         WdfRequest.SetStatus(STATUS_INVALID_BUFFER_SIZE);
         WdfRequest.SetOutputDataLen(0);
@@ -757,13 +757,13 @@ CUsbDkControlDevice* CUsbDkControlDevice::Reference(WDFDRIVER Driver)
     }
     else
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! creating control device");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! creating control device");
     }
 
     CObjHolder<CUsbDkControlDevice> dev(new CUsbDkControlDevice());
     if (!dev)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! cannot allocate control device");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! cannot allocate control device");
         m_UsbDkControlDevice->Release();
         return nullptr;
     }
@@ -771,7 +771,7 @@ CUsbDkControlDevice* CUsbDkControlDevice::Reference(WDFDRIVER Driver)
     auto status = dev->Create(Driver);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! cannot create control device %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! cannot create control device %!STATUS!", status);
         m_UsbDkControlDevice->Release();
         return nullptr;
     }
@@ -781,7 +781,7 @@ CUsbDkControlDevice* CUsbDkControlDevice::Reference(WDFDRIVER Driver)
     status = (*m_UsbDkControlDevice)->Register();
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! cannot register control device %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! cannot register control device %!STATUS!", status);
         m_UsbDkControlDevice->Release();
         return nullptr;
     }
@@ -798,7 +798,7 @@ bool CUsbDkControlDevice::Allocate()
 
     if (m_UsbDkControlDevice == nullptr)
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Cannot allocate control device holder");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Cannot allocate control device holder");
         return false;
     }
 
@@ -810,7 +810,7 @@ void CUsbDkControlDevice::AddRedirectRollBack(const USB_DK_DEVICE_ID &DeviceId, 
     auto res = m_Redirections.Delete(&DeviceId);
     if (!res)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Roll-back failed.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Roll-back failed.");
     }
 
     if (!WithReset)
@@ -821,7 +821,7 @@ void CUsbDkControlDevice::AddRedirectRollBack(const USB_DK_DEVICE_ID &DeviceId, 
     auto resetRes = ResetUsbDevice(DeviceId, false);
     if (!NT_SUCCESS(resetRes))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Roll-back reset failed. %!STATUS!", resetRes);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Roll-back reset failed. %!STATUS!", resetRes);
     }
 }
 
@@ -845,7 +845,7 @@ NTSTATUS CUsbDkControlDevice::AddRedirect(const USB_DK_DEVICE_ID &DeviceId, HAND
     Redirection->AddRef();
     CObjHolder<CUsbDkRedirection, CRefCountingDeleter> dereferencer(Redirection);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Success. New redirections list:");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Success. New redirections list:");
     m_Redirections.Dump();
 
     auto resetRes = ResetUsbDevice(DeviceId, false);
@@ -853,12 +853,12 @@ NTSTATUS CUsbDkControlDevice::AddRedirect(const USB_DK_DEVICE_ID &DeviceId, HAND
     if (Redirection->IsPortRedirection() && (NT_SUCCESS(resetRes) || resetRes == STATUS_NO_SUCH_DEVICE))
     {
         if (!NT_SUCCESS(resetRes))
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Can't find device for reset. Start port redirection without device.");
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Can't find device for reset. Start port redirection without device.");
 
         auto status = Redirection->CreatePortRedirectorHandle(DevicePortControlObject(), RequestorProcess, RedirectorDevice);
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! CreateRedirectorHandle() failed. %!STATUS!", status);
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! CreateRedirectorHandle() failed. %!STATUS!", status);
             AddRedirectRollBack(DeviceId, false);
         }
         return status;
@@ -866,7 +866,7 @@ NTSTATUS CUsbDkControlDevice::AddRedirect(const USB_DK_DEVICE_ID &DeviceId, HAND
 
     if (!NT_SUCCESS(resetRes))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Reset after start redirection failed. %!STATUS!", resetRes);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Reset after start redirection failed. %!STATUS!", resetRes);
         AddRedirectRollBack(DeviceId, false);
         return resetRes;
     }
@@ -874,7 +874,7 @@ NTSTATUS CUsbDkControlDevice::AddRedirect(const USB_DK_DEVICE_ID &DeviceId, HAND
     auto waitRes = Redirection->WaitForAttachment();
     if ((waitRes == STATUS_TIMEOUT) || !NT_SUCCESS(waitRes))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Wait for redirector attachment failed. %!STATUS!", waitRes);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Wait for redirector attachment failed. %!STATUS!", waitRes);
         AddRedirectRollBack(DeviceId, true);
         return (waitRes == STATUS_TIMEOUT) ? STATUS_DEVICE_NOT_CONNECTED : waitRes;
     }
@@ -882,7 +882,7 @@ NTSTATUS CUsbDkControlDevice::AddRedirect(const USB_DK_DEVICE_ID &DeviceId, HAND
     auto status = Redirection->CreateRedirectorHandle(RequestorProcess, RedirectorDevice);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! CreateRedirectorHandle() failed. %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! CreateRedirectorHandle() failed. %!STATUS!", status);
         AddRedirectRollBack(DeviceId, true);
         return STATUS_DEVICE_NOT_CONNECTED;
     }
@@ -892,7 +892,7 @@ NTSTATUS CUsbDkControlDevice::AddRedirect(const USB_DK_DEVICE_ID &DeviceId, HAND
 
 NTSTATUS CUsbDkControlDevice::AddHideRuleToSet(const USB_DK_HIDE_RULE &UsbDkRule, HideRulesSet &Set)
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! entry");
 
     auto MatchAllMapper = [](ULONG64 Value) -> ULONG
     { return Value == USB_DK_HIDE_RULE_MATCH_ALL ? USBDK_REG_HIDE_RULE_MATCH_ALL
@@ -905,17 +905,17 @@ NTSTATUS CUsbDkControlDevice::AddHideRuleToSet(const USB_DK_HIDE_RULE &UsbDkRule
                                                           MatchAllMapper(UsbDkRule.BCD)));
     if (!NewRule)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Failed to allocate new rule");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Failed to allocate new rule");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
     if(!Set.Add(NewRule))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! failed. Hide rule already present.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! failed. Hide rule already present.");
         return STATUS_OBJECT_NAME_COLLISION;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Current hide rules:");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Current hide rules:");
     Set.Dump();
 
     NewRule.detach();
@@ -925,7 +925,7 @@ NTSTATUS CUsbDkControlDevice::AddHideRuleToSet(const USB_DK_HIDE_RULE &UsbDkRule
 void CUsbDkControlDevice::ClearHideRules()
 {
     m_HideRules.Clear();
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! All dynamic hide rules dropped.");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! All dynamic hide rules dropped.");
 }
 
 class CHideRulesRegKey final : public CRegKey
@@ -936,7 +936,7 @@ public:
         auto DriverParamsRegPath = CDriverParamsRegistryPath::Get();
         if (DriverParamsRegPath->Length == 0)
         {
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE,
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE,
                 "%!FUNC! Driver parameters registry key path not available.");
 
             return STATUS_INVALID_DEVICE_STATE;
@@ -950,7 +950,7 @@ public:
         status = HideRulesRegPath.Create(DriverParamsRegPath, ParamsSubkey);
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE,
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE,
                 "%!FUNC! Failed to allocate path to hide rules registry key.");
 
             return status;
@@ -959,7 +959,7 @@ public:
         status = CRegKey::Open(*HideRulesRegPath);
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE,
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE,
                 "%!FUNC! Failed to open hide rules registry key.");
         }
 
@@ -1030,7 +1030,7 @@ private:
         status = QueryValueInfo(*ValueNameHolder, KeyValuePartialInformation, Buffer);
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, 
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, 
                 "%!FUNC! Failed to query value %wZ (status %!STATUS!)", ValueNameHolder, status);
 
             return status;
@@ -1039,7 +1039,7 @@ private:
         auto Info = reinterpret_cast<PKEY_VALUE_PARTIAL_INFORMATION>(Buffer.Ptr());
         if (Info->Type != REG_DWORD)
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE,
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE,
                 "%!FUNC! Wrong data type for value %wZ: %d", ValueNameHolder, Info->Type);
 
             return STATUS_DATA_ERROR;
@@ -1047,7 +1047,7 @@ private:
 
         if (Info->DataLength != sizeof(DWORD32))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE,
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE,
                 "%!FUNC! Wrong data length for value %wZ: %lu", ValueNameHolder, Info->DataLength);
 
             return STATUS_DATA_ERROR;
@@ -1120,29 +1120,29 @@ NTSTATUS CUsbDkControlDevice::AddRedirectionToSet(const USB_DK_DEVICE_ID &Device
 
     if (!newRedir)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! failed. Cannot allocate redirection.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! failed. Cannot allocate redirection.");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
     auto status = newRedir->Create(DeviceId);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! failed. Cannot create redirection.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! failed. Cannot create redirection.");
         return status;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Adding new redirection");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Adding new redirection");
     newRedir->Dump();
 
     if (!newRedir->IsPortRedirection() && !UsbDeviceExists(DeviceId))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! failed. Cannot redirect unknown device.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! failed. Cannot redirect unknown device.");
         return STATUS_OBJECT_NAME_NOT_FOUND;
     }
 
     if (!m_Redirections.Add(newRedir))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! failed. Device already redirected.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! failed. Device already redirected.");
         return STATUS_OBJECT_NAME_COLLISION;
     }
 
@@ -1160,39 +1160,39 @@ NTSTATUS CUsbDkControlDevice::RemoveRedirect(const USB_DK_DEVICE_ID &DeviceId, b
         auto res = ResetUsbDevice(DeviceId, false);
         if (NT_SUCCESS(res))
         {
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE,
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE,
                         "%!FUNC! Waiting for detachment from %S:%S",
                         DeviceId.DeviceID, DeviceId.InstanceID);
 
             if (!WaitForDetachment(DeviceId))
             {
-                TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Wait for redirector detachment failed.");
+                TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Wait for redirector detachment failed.");
                 return STATUS_DEVICE_NOT_CONNECTED;
             }
 
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE,
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE,
                         "%!FUNC! Detached from %S:%S",
                         DeviceId.DeviceID, DeviceId.InstanceID);
         }
         else if (res != STATUS_NO_SUCH_DEVICE)
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! Usb device reset failed.");
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Usb device reset failed.");
             return res;
         }
 
         if (!m_Redirections.Delete(&DeviceId))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! No such redirection registered.");
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! No such redirection registered.");
             res = STATUS_OBJECT_NAME_NOT_FOUND;
         }
 
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC! Finished successfully. New redirections list:");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Finished successfully. New redirections list:");
         m_Redirections.Dump();
 
         return STATUS_SUCCESS;
     }
 
-    TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE,
+    TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE,
                 "%!FUNC! failed for %S:%S",
                 DeviceId.DeviceID, DeviceId.InstanceID);
 
@@ -1235,7 +1235,7 @@ bool CUsbDkControlDevice::WaitForDetachment(const USB_DK_DEVICE_ID &ID)
                                               Redirection = R;});
     if (!res)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! object was not found.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! object was not found.");
         return res;
     }
     res = Redirection->WaitForDetachment();
@@ -1279,7 +1279,7 @@ NTSTATUS CUsbDkRedirection::Create(const USB_DK_DEVICE_ID &Id)
 
 void CUsbDkRedirection::Dump(LPCSTR message) const
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE,
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE,
                 "%!FUNC! %s DevID: %wZ, InstanceID: %wZ, HubID: %wZ, Port: %wZ",
                 message,
                 m_DeviceID, m_InstanceID, m_HubID, m_PortString);
@@ -1287,13 +1287,13 @@ void CUsbDkRedirection::Dump(LPCSTR message) const
 
 bool CUsbDkRedirection::MatchProcess(ULONG pid)
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_WDFDEVICE, "%!FUNC! pid 0x%X, owner 0x%X", pid, m_OwnerPid);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_WDFDEVICE, "%!FUNC! pid 0x%X, owner 0x%X", pid, m_OwnerPid);
     return pid == m_OwnerPid;
 }
 
 void CUsbDkRedirection::NotifyRedirectorCreated(CUsbDkFilterDevice *RedirectorDevice)
 {
-    TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! Redirector created for");
+    TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! Redirector created for");
     Dump();
 
     m_RedirectorDevice = RedirectorDevice;
@@ -1305,7 +1305,7 @@ void CUsbDkRedirection::NotifyRedirectionRemoved()
 {
     if (IsPreparedForRemove())
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! Raising redirection removal event for");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! Raising redirection removal event for");
         Dump();
 
         m_RedirectionRemoved.Set();
@@ -1320,7 +1320,7 @@ void CUsbDkRedirection::NotifyRedirectionRemoved()
 
 void CUsbDkRedirection::NotifyRedirectionRemovalStarted()
 {
-    TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! Redirector removal started for");
+    TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! Redirector removal started for");
     Dump();
 
     m_RemovalInProgress = true;
@@ -1338,7 +1338,7 @@ bool CUsbDkRedirection::WaitForDetachment()
     auto waitRes = m_RedirectionRemoved.Wait(true, -SecondsTo100Nanoseconds(120));
     if ((waitRes == STATUS_TIMEOUT) || !NT_SUCCESS(waitRes))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! Wait of RedirectionRemoved event failed. %!STATUS!", waitRes);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! Wait of RedirectionRemoved event failed. %!STATUS!", waitRes);
         return false;
     }
 
@@ -1373,7 +1373,7 @@ NTSTATUS CUsbDkRedirection::CreatePortRedirectorHandle(WDFDEVICE PortCtrlDevice,
 {
     if (IsPreparedForRemove())
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC!: device already marked for removal");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC!: device already marked for removal");
         return STATUS_DEVICE_REMOVED;
     }
 
@@ -1391,7 +1391,7 @@ NTSTATUS CUsbDkRedirection::CreatePortRedirectorHandle(WDFDEVICE PortCtrlDevice,
                              FILE_NON_DIRECTORY_FILE | FILE_RANDOM_ACCESS);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC!: can't open port control device: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC!: can't open port control device: %!STATUS!", status);
         return status;
     }
 
@@ -1401,7 +1401,7 @@ NTSTATUS CUsbDkRedirection::CreatePortRedirectorHandle(WDFDEVICE PortCtrlDevice,
     if (!NT_SUCCESS(status))
     {
         ZwClose(KernelHandle);
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC!: ObReferenceObjectByHandle failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC!: ObReferenceObjectByHandle failed: %!STATUS!", status);
         return status;
     }
 
@@ -1410,7 +1410,7 @@ NTSTATUS CUsbDkRedirection::CreatePortRedirectorHandle(WDFDEVICE PortCtrlDevice,
     {
         ObDereferenceObject((PVOID)fileObj);
         ZwClose(KernelHandle);
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE, "%!FUNC!: WdfDeviceGetFileObject failed.");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE, "%!FUNC!: WdfDeviceGetFileObject failed.");
         return STATUS_DEVICE_NOT_READY;
     }
 
@@ -1430,7 +1430,7 @@ NTSTATUS CUsbDkRedirection::CreatePortRedirectorHandle(WDFDEVICE PortCtrlDevice,
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE, "%!FUNC! ZwDuplicateObject failed. %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! ZwDuplicateObject failed. %!STATUS!", status);
         ZwClose(KernelHandle);
     }
 
@@ -1457,7 +1457,7 @@ NTSTATUS CUsbDkRedirection::CreateRedirectorHandle(HANDLE RequestorProcess, PHAN
     {
         if (IsPreparedForRemove())
         {
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_WDFDEVICE, "%!FUNC!: device already marked for removal");
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_WDFDEVICE, "%!FUNC!: device already marked for removal");
             status = STATUS_DEVICE_REMOVED;
             break;
         }
@@ -1465,7 +1465,7 @@ NTSTATUS CUsbDkRedirection::CreateRedirectorHandle(HANDLE RequestorProcess, PHAN
         if (NT_SUCCESS(status))
         {
             ULONG pid = (ULONG)(ULONG_PTR)PsGetCurrentProcessId();
-            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_WDFDEVICE, "%!FUNC! done for process 0x%X", pid);
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_WDFDEVICE, "%!FUNC! done for process 0x%X", pid);
             m_OwnerPid = pid;
             return status;
         }
@@ -1473,26 +1473,26 @@ NTSTATUS CUsbDkRedirection::CreateRedirectorHandle(HANDLE RequestorProcess, PHAN
         KeDelayExecutionThread(KernelMode, FALSE, &interval);
     } while (iterationsLeft-- > 0);
 
-    TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFDEVICE, "%!FUNC! failed, %!STATUS!", status);
+    TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFDEVICE, "%!FUNC! failed, %!STATUS!", status);
     return status;
 }
 
 LONG CUsbDkHideRule::m_defaultDumpLevel = TRACE_LEVEL_INFORMATION;
 void CUsbDkHideRule::Dump(LONG traceLevel) const
 {
-    TraceEvents(traceLevel, TRACE_CONTROLDEVICE, "%!FUNC! Hide: %!bool!, C: %08X, V: %08X, P: %08X, BCD: %08X",
+    TraceEvents(traceLevel, TRACE_USBDK_CONTROLDEVICE, "%!FUNC! Hide: %!bool!, C: %08X, V: %08X, P: %08X, BCD: %08X",
                 m_Hide, m_Class, m_VID, m_PID, m_BCD);
 }
 
 void CDriverParamsRegistryPath::CreateFrom(PCUNICODE_STRING DriverRegPath)
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_CONTROLDEVICE,
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_CONTROLDEVICE,
         "%!FUNC! Driver registry path: %wZ", DriverRegPath);
 
     m_Path = new CAllocatablePath;
     if (m_Path == nullptr)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE,
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE,
             "%!FUNC! Failed to allocate storage for parameters registry path");
         return;
     }
@@ -1504,7 +1504,7 @@ void CDriverParamsRegistryPath::CreateFrom(PCUNICODE_STRING DriverRegPath)
     status = m_Path->Create(DriverRegPath, ParamsSubkey);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_CONTROLDEVICE,
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_CONTROLDEVICE,
             "%!FUNC! Failed to duplicate parameters registry path");
     }
 }

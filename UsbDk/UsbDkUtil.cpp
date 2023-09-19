@@ -155,7 +155,7 @@ PVOID DuplicateStaticBuffer(const void *Buffer, SIZE_T Length, POOL_TYPE PoolTyp
     }
     else
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_UTILS, "%!FUNC! Failed to allocate buffer");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_UTILS, "%!FUNC! Failed to allocate buffer");
     }
     return Duplicate;
 }
@@ -175,7 +175,7 @@ UsbDkCreateCurrentProcessHandle(HANDLE &Handle)
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_UTILS, "%!FUNC! failed, error: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_UTILS, "%!FUNC! failed, error: %!STATUS!", status);
     }
 
     return status;

@@ -52,14 +52,14 @@ NTSTATUS CIsochronousUrb::Create(Direction TransferDirection, PVOID TransferBuff
     auto status = WdfUsbTargetDeviceCreateIsochUrb(m_TargetDevice, &attributes, static_cast<ULONG>(NumberOfPackets), &m_UrbMemoryHandle, &m_Urb);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_URB, "%!FUNC! failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_URB, "%!FUNC! failed: %!STATUS!", status);
         return status;
     }
 
     auto UrbSize = GET_ISO_URB_SIZE(NumberOfPackets);
     if (UrbSize > USHORT_MAX)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_URB, "%!FUNC! failed: too much packets");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_URB, "%!FUNC! failed: too much packets");
         return STATUS_BUFFER_OVERFLOW;
     }
 

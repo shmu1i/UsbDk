@@ -36,7 +36,7 @@ NTSTATUS CWdfUsbInterface::SetAltSetting(ULONG64 AltSettingIdx)
     auto status = WdfUsbInterfaceSelectSetting(m_Interface, WDF_NO_OBJECT_ATTRIBUTES, &params);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed: %!STATUS!", status);
         return status;
     }
 
@@ -46,7 +46,7 @@ NTSTATUS CWdfUsbInterface::SetAltSetting(ULONG64 AltSettingIdx)
 
     m_NumPipes = WdfUsbInterfaceGetNumConfiguredPipes(m_Interface);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBTARGET, "%!FUNC! index %d, %d pipes",
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_USBTARGET, "%!FUNC! index %d, %d pipes",
                                          static_cast<UCHAR>(AltSettingIdx), m_NumPipes);
 
     if (m_NumPipes == 0)
@@ -57,7 +57,7 @@ NTSTATUS CWdfUsbInterface::SetAltSetting(ULONG64 AltSettingIdx)
     m_Pipes = new CWdfUsbPipe[m_NumPipes];
     if (!m_Pipes)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed to allocate pipes array for %d pipes", m_NumPipes);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed to allocate pipes array for %d pipes", m_NumPipes);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -77,13 +77,13 @@ NTSTATUS CWdfUsbInterface::Reset(WDFREQUEST Request)
         auto abortStatus = m_Pipes[i].Abort(Request);
         if (!NT_SUCCESS(abortStatus))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC!: Abort of pipe %d failed", i);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC!: Abort of pipe %d failed", i);
             status = abortStatus;
         }
         auto resetStatus = m_Pipes[i].Reset(Request);
         if (!NT_SUCCESS(resetStatus))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC!: Reset of pipe %d failed", i);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC!: Reset of pipe %d failed", i);
             status = resetStatus;
         }
     }
@@ -96,7 +96,7 @@ NTSTATUS CWdfUsbInterface::Create(WDFUSBDEVICE Device, UCHAR InterfaceIdx)
     m_Interface = WdfUsbTargetDeviceGetInterface(Device, InterfaceIdx);
     ASSERT(m_Interface != nullptr);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBTARGET, "%!FUNC! created interface #%d", InterfaceIdx);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_USBTARGET, "%!FUNC! created interface #%d", InterfaceIdx);
 
     return SetAltSetting(0);
 }
@@ -112,7 +112,7 @@ void CWdfUsbPipe::Create(WDFUSBDEVICE Device, WDFUSBINTERFACE Interface, UCHAR P
     ASSERT(m_Pipe != nullptr);
     WdfUsbTargetPipeSetNoMaximumPacketSizeCheck(m_Pipe);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBTARGET,
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_USBTARGET,
                 "%!FUNC! Created pipe #%d, "
                 "Endpoint address %d, "
                 "Setting index %d, "
@@ -136,7 +136,7 @@ void CWdfUsbPipe::ReadAsync(CTargetRequest &Request, WDFMEMORY Buffer, PFN_WDF_R
     auto status = WdfUsbTargetPipeFormatRequestForRead(m_Pipe, Request, Buffer, nullptr);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! WdfUsbTargetPipeFormatRequestForRead failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! WdfUsbTargetPipeFormatRequestForRead failed: %!STATUS!", status);
         Request.SetStatus(status);
     }
     else
@@ -144,7 +144,7 @@ void CWdfUsbPipe::ReadAsync(CTargetRequest &Request, WDFMEMORY Buffer, PFN_WDF_R
         status = Request.SendWithCompletion(WdfUsbTargetPipeGetIoTarget(m_Pipe), Completion);
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! send failed: %!STATUS!", status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! send failed: %!STATUS!", status);
         }
     }
 }
@@ -156,7 +156,7 @@ void CWdfUsbPipe::WriteAsync(CTargetRequest &Request, WDFMEMORY Buffer, PFN_WDF_
     auto status = WdfUsbTargetPipeFormatRequestForWrite(m_Pipe, Request, Buffer, nullptr);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! WdfUsbTargetPipeFormatRequestForWrite failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! WdfUsbTargetPipeFormatRequestForWrite failed: %!STATUS!", status);
         Request.SetStatus(status);
     }
     else
@@ -164,7 +164,7 @@ void CWdfUsbPipe::WriteAsync(CTargetRequest &Request, WDFMEMORY Buffer, PFN_WDF_
         status = Request.SendWithCompletion(WdfUsbTargetPipeGetIoTarget(m_Pipe), Completion);
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! send failed: %!STATUS!", status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! send failed: %!STATUS!", status);
         }
     }
 }
@@ -188,7 +188,7 @@ void CWdfUsbPipe::SubmitIsochronousTransfer(CTargetRequest &Request,
                              PacketSizes);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed to create URB: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed to create URB: %!STATUS!", status);
         Request.SetStatus(status);
         return;
     }
@@ -196,7 +196,7 @@ void CWdfUsbPipe::SubmitIsochronousTransfer(CTargetRequest &Request,
     status = WdfUsbTargetPipeFormatRequestForUrb(m_Pipe, Request, Urb, nullptr);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed to build a USB request: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed to build a USB request: %!STATUS!", status);
         Request.SetStatus(status);
         return;
     }
@@ -204,7 +204,7 @@ void CWdfUsbPipe::SubmitIsochronousTransfer(CTargetRequest &Request,
     status = Request.SendWithCompletion(WdfUsbTargetPipeGetIoTarget(m_Pipe), Completion);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! send failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! send failed: %!STATUS!", status);
     }
 }
 
@@ -212,7 +212,7 @@ NTSTATUS CWdfUsbPipe::Abort(WDFREQUEST Request)
 {
     auto RequestId = m_RequestConter++;
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBTARGET,
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_USBTARGET,
                 "%!FUNC! for pipe %d (Request ID: %lld)",
                 EndpointAddress(), RequestId);
 
@@ -220,7 +220,7 @@ NTSTATUS CWdfUsbPipe::Abort(WDFREQUEST Request)
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET,
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET,
                     "%!FUNC! for pipe %d failed: %!STATUS! (Request ID: %lld)",
                     EndpointAddress(), status, RequestId);
     }
@@ -232,7 +232,7 @@ NTSTATUS CWdfUsbPipe::Reset(WDFREQUEST Request)
 {
     auto RequestId = m_RequestConter++;
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBTARGET,
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_USBTARGET,
                 "%!FUNC! for pipe %d (Request ID: %lld)",
                 EndpointAddress(), RequestId);
 
@@ -240,7 +240,7 @@ NTSTATUS CWdfUsbPipe::Reset(WDFREQUEST Request)
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET,
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET,
                     "%!FUNC! for pipe %d failed: %!STATUS! (Request ID: %lld)",
                     EndpointAddress(), status, RequestId);
     }
@@ -261,7 +261,7 @@ NTSTATUS CWdfUsbTarget::Create(WDFDEVICE Device)
                                                          &m_UsbDevice);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Cannot create USB target, %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Cannot create USB target, %!STATUS!", status);
         return status;
     }
 
@@ -270,32 +270,32 @@ NTSTATUS CWdfUsbTarget::Create(WDFDEVICE Device)
     status = WdfUsbTargetDeviceSelectConfig(m_UsbDevice, WDF_NO_OBJECT_ATTRIBUTES, &Params);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Cannot apply device configuration, %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Cannot apply device configuration, %!STATUS!", status);
         return status;
     }
 
     m_NumInterfaces = WdfUsbTargetDeviceGetNumInterfaces(m_UsbDevice);
     if (m_NumInterfaces == 0)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed: Number of interfaces is zero.");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed: Number of interfaces is zero.");
         return STATUS_INVALID_DEVICE_STATE;
     }
 
     m_Interfaces = new CWdfUsbInterface[m_NumInterfaces];
     if (!m_Interfaces)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed to allocate array for %d interface(s)", m_NumInterfaces);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed to allocate array for %d interface(s)", m_NumInterfaces);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBTARGET, "%!FUNC! with %d interface(s)", m_NumInterfaces);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_USBTARGET, "%!FUNC! with %d interface(s)", m_NumInterfaces);
 
     for (UCHAR i = 0; i < m_NumInterfaces; i++)
     {
         status = m_Interfaces[i].Create(m_UsbDevice, i);
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Cannot create interface %d, %!STATUS!", i, status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Cannot create interface %d, %!STATUS!", i, status);
             return status;
         }
     }
@@ -315,7 +315,7 @@ NTSTATUS CWdfUsbTarget::SetInterfaceAltSetting(ULONG64 InterfaceIdx, ULONG64 Alt
         return STATUS_INVALID_PARAMETER_1;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBTARGET, "%!FUNC! setting #%d for interface #%d",
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_USBTARGET, "%!FUNC! setting #%d for interface #%d",
                 static_cast<UCHAR>(AltSettingIdx), static_cast<UCHAR>(InterfaceIdx));
 
     return m_Interfaces[InterfaceIdx].SetAltSetting(AltSettingIdx);
@@ -331,7 +331,7 @@ void CWdfUsbTarget::WritePipeAsync(WDFREQUEST Request, ULONG64 EndpointAddress, 
                                                            Pipe.WriteAsync(WdfRequest, Buffer, Completion);
                                                        }))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed because pipe was not found");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed because pipe was not found");
         WdfRequest.SetStatus(STATUS_NOT_FOUND);
     }
 }
@@ -346,7 +346,7 @@ void CWdfUsbTarget::ReadPipeAsync(WDFREQUEST Request, ULONG64 EndpointAddress, W
                                                            Pipe.ReadAsync(WdfRequest, Buffer, Completion);
                                                        }))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed because pipe was not found");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed because pipe was not found");
         WdfRequest.SetStatus(STATUS_NOT_FOUND);
     }
 }
@@ -363,7 +363,7 @@ void CWdfUsbTarget::ReadIsochronousPipeAsync(WDFREQUEST Request, ULONG64 Endpoin
                                                            Pipe.ReadIsochronousAsync(WdfRequest, Buffer, PacketSizes, PacketNumber, Completion);
                                                        }))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed because pipe was not found");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed because pipe was not found");
         WdfRequest.SetStatus(STATUS_NOT_FOUND);
     }
 }
@@ -380,7 +380,7 @@ void CWdfUsbTarget::WriteIsochronousPipeAsync(WDFREQUEST Request, ULONG64 Endpoi
                                                            Pipe.WriteIsochronousAsync(WdfRequest, Buffer, PacketSizes, PacketNumber, Completion);
                                                        }))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed because pipe was not found");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed because pipe was not found");
         WdfRequest.SetStatus(STATUS_NOT_FOUND);
     }
 }
@@ -403,7 +403,7 @@ NTSTATUS CWdfUsbTarget::AbortPipe(WDFREQUEST Request, ULONG64 EndpointAddress)
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed: %!STATUS!", status);
     }
 
     return status;
@@ -427,7 +427,7 @@ NTSTATUS CWdfUsbTarget::ResetPipe(WDFREQUEST Request, ULONG64 EndpointAddress)
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! Failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! Failed: %!STATUS!", status);
     }
 
     return status;
@@ -440,19 +440,19 @@ NTSTATUS CWdfUsbTarget::ResetDevice(WDFREQUEST Request)
     //ResetDevice does not require locking because is scheduled sequentially
     //with SetAltSettings which is only operation that changes pipes array
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBTARGET, "%!FUNC! processing started");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_USBTARGET, "%!FUNC! processing started");
 
     for (UCHAR i = 0; i < m_NumInterfaces; i++)
     {
         auto currentStatus = m_Interfaces[i].Reset(Request);
         if (!NT_SUCCESS(currentStatus))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC!: Reset of interface %d failed", i);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC!: Reset of interface %d failed", i);
             status = currentStatus;
         }
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBTARGET, "%!FUNC! processing finished: %!STATUS!", status);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_USBTARGET, "%!FUNC! processing finished: %!STATUS!", status);
 
     return status;
 }
@@ -466,14 +466,14 @@ NTSTATUS CWdfUsbTarget::ControlTransferAsync(CTargetRequest &WdfRequest, PWDF_US
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! WdfUsbTargetDeviceFormatRequestForControlTransfer failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! WdfUsbTargetDeviceFormatRequestForControlTransfer failed: %!STATUS!", status);
     }
     else
     {
         status = WdfRequest.SendWithCompletion(WdfUsbTargetDeviceGetIoTarget(m_UsbDevice), Completion);
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "%!FUNC! send failed: %!STATUS!", status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "%!FUNC! send failed: %!STATUS!", status);
         }
         else
         {
@@ -486,5 +486,5 @@ NTSTATUS CWdfUsbTarget::ControlTransferAsync(CTargetRequest &WdfRequest, PWDF_US
 
 void CWdfUsbTarget::TracePipeNotFoundError(ULONG64 EndpointAddress)
 {
-    TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBTARGET, "Pipe %llu not found", EndpointAddress);
+    TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_USBTARGET, "Pipe %llu not found", EndpointAddress);
 }

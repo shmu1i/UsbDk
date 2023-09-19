@@ -36,7 +36,7 @@ NTSTATUS CUsbDkHiderStrategy::Create(CUsbDkFilterDevice *Owner)
     if (NT_SUCCESS(status))
     {
         m_ControlDevice->RegisterHiddenDevice(*Owner);
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_HIDER, "%!FUNC! Serial number for this device is %lu", Owner->GetSerialNumber());
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_HIDER, "%!FUNC! Serial number for this device is %lu", Owner->GetSerialNumber());
 
     }
 
@@ -67,7 +67,7 @@ void CUsbDkHiderStrategy::PatchDeviceID(PIRP Irp)
 
     PIO_STACK_LOCATION  irpStack = IoGetCurrentIrpStackLocation(Irp);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_HIDER, "%!FUNC! for %!devid!", irpStack->Parameters.QueryId.IdType);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_HIDER, "%!FUNC! for %!devid!", irpStack->Parameters.QueryId.IdType);
 
     switch (irpStack->Parameters.QueryId.IdType)
     {
@@ -82,7 +82,7 @@ void CUsbDkHiderStrategy::PatchDeviceID(PIRP Irp)
             auto status = InstanceID.Create(L"UsbDkFilter", m_Owner->GetInstanceNumber());
             if (!NT_SUCCESS(status))
             {
-                TraceEvents(TRACE_LEVEL_ERROR, TRACE_HIDER, "%!FUNC! Failed to create instance ID string %!STATUS!", status);
+                TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_HIDER, "%!FUNC! Failed to create instance ID string %!STATUS!", status);
                 return;
             }
 
@@ -131,7 +131,7 @@ NTSTATUS CUsbDkHiderStrategy::PatchDeviceText(PIRP Irp)
     const WCHAR *Buffer = nullptr;
     SIZE_T Size = 0;
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_HIDER, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_HIDER, "%!FUNC! Entry");
 
     PIO_STACK_LOCATION  irpStack = IoGetCurrentIrpStackLocation(Irp);
     switch (irpStack->Parameters.QueryDeviceText.DeviceTextType)
@@ -196,14 +196,14 @@ bool CUsbDkHiderStrategy::ShouldDenyRemoval() const
 
     if (TimePassedSinceCreation <= REMOVAL_DENIAL_TIMEOUT_MS)
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_HIDER,
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_HIDER,
                     "%!FUNC! Denying removal because %llu ms only passed since creation",
                     TimePassedSinceCreation);
         return true;
     }
     else
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_HIDER,
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_HIDER,
                     "%!FUNC! Allowing removal because %llu ms already passed since creation",
                     TimePassedSinceCreation);
         return false;

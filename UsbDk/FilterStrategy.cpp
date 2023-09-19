@@ -42,7 +42,7 @@ void CUsbDkFilterStrategy::ForwardRequest(WDFREQUEST Request)
     auto status = WdfRequest.SendAndForget(m_Owner->IOTarget());
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERSTRATEGY, "%!FUNC! failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERSTRATEGY, "%!FUNC! failed %!STATUS!", status);
     }
 }
 
@@ -51,7 +51,7 @@ void CUsbDkFilterStrategy::IoInCallerContext(WDFDEVICE Device, WDFREQUEST Reques
     auto status = WdfDeviceEnqueueRequest(Device, Request);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_FILTERSTRATEGY, "%!FUNC! failed to enqueue request: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERSTRATEGY, "%!FUNC! failed to enqueue request: %!STATUS!", status);
         WdfRequestComplete(Request, status);
     }
 }

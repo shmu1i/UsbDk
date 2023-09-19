@@ -39,7 +39,7 @@ NTSTATUS CRegKey::Open(const CRegKey &ParentKey, const UNICODE_STRING &RegPath)
     auto status = ZwOpenKey(&m_Key, KEY_READ, &KeyAttributes);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REGISTRY,
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REGISTRY,
             "%!FUNC! Failed to open registry key %wZ, parent 0x%p (status: %!STATUS!)", &RegPath, ParentKey.m_Key, status);
     }
 
@@ -69,7 +69,7 @@ NTSTATUS CRegKey::QuerySubkeyInfo(ULONG Index,
 
     if (!NT_SUCCESS(status) && (status != STATUS_NO_MORE_ENTRIES))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REGISTRY,
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REGISTRY,
             "%!FUNC! Failed to query subkey #%d info, info class %d (status: %!STATUS!)", Index, InfoClass, status);
     }
 
@@ -99,7 +99,7 @@ NTSTATUS CRegKey::QueryValueInfo(const UNICODE_STRING &ValueName,
 
     if (status != STATUS_SUCCESS)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REGISTRY,
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REGISTRY,
             "%!FUNC! Failed to query value %wZ, info class %d (status: %!STATUS!)", &ValueName, InfoClass, status);
     }
 

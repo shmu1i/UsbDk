@@ -91,7 +91,7 @@ NTSTATUS CWdfRequest::LockUserBufferForRead(PVOID Ptr, size_t Length, WDFMEMORY 
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFREQUEST,
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFREQUEST,
                     "%!FUNC! Failed for address %p, %llu bytes. Error %!STATUS!\n",
                     Ptr, Length, status);
     }
@@ -111,7 +111,7 @@ NTSTATUS CWdfRequest::LockUserBufferForWrite(PVOID Ptr, size_t Length, WDFMEMORY
 
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_WDFREQUEST,
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_WDFREQUEST,
                     "%!FUNC! Failed for address %p, %llu bytes. Error %!STATUS!\n",
                     Ptr, Length, status);
     }

@@ -32,23 +32,23 @@
         UsbDkTraceGuid, (88e1661f,48b6,410f,b096,ba84e9f0656f), \
                                                                             \
         WPP_DEFINE_BIT(MYDRIVER_ALL_INFO)                              \
-        WPP_DEFINE_BIT(TRACE_DRIVER)                                   \
-        WPP_DEFINE_BIT(TRACE_DEVICE)                                   \
-        WPP_DEFINE_BIT(TRACE_FILTER)                                   \
-        WPP_DEFINE_BIT(TRACE_DEVACCESS)                                \
-        WPP_DEFINE_BIT(TRACE_REGTEXT)                                  \
-        WPP_DEFINE_BIT(TRACE_CONTROLDEVICE)                            \
-        WPP_DEFINE_BIT(TRACE_HIDERDEVICE)                              \
-        WPP_DEFINE_BIT(TRACE_FILTERDEVICE)                             \
-        WPP_DEFINE_BIT(TRACE_WDFDEVICE)                                \
-        WPP_DEFINE_BIT(TRACE_REDIRECTOR)                               \
-        WPP_DEFINE_BIT(TRACE_HIDER)                                    \
-        WPP_DEFINE_BIT(TRACE_UTILS)                                    \
-        WPP_DEFINE_BIT(TRACE_USBTARGET)                                \
-        WPP_DEFINE_BIT(TRACE_FILTERSTRATEGY)                           \
-        WPP_DEFINE_BIT(TRACE_URB)                                      \
-        WPP_DEFINE_BIT(TRACE_REGISTRY)                                 \
-        WPP_DEFINE_BIT(TRACE_WDFREQUEST)                               \
+        WPP_DEFINE_BIT(TRACE_USBDK_DRIVER)                                   \
+        WPP_DEFINE_BIT(TRACE_USBDK_DEVICE)                                   \
+        WPP_DEFINE_BIT(TRACE_USBDK_FILTER)                                   \
+        WPP_DEFINE_BIT(TRACE_USBDK_DEVACCESS)                                \
+        WPP_DEFINE_BIT(TRACE_USBDK_REGTEXT)                                  \
+        WPP_DEFINE_BIT(TRACE_USBDK_CONTROLDEVICE)                            \
+        WPP_DEFINE_BIT(TRACE_USBDK_HIDERDEVICE)                              \
+        WPP_DEFINE_BIT(TRACE_USBDK_FILTERDEVICE)                             \
+        WPP_DEFINE_BIT(TRACE_USBDK_WDFDEVICE)                                \
+        WPP_DEFINE_BIT(TRACE_USBDK_REDIRECTOR)                               \
+        WPP_DEFINE_BIT(TRACE_USBDK_HIDER)                                    \
+        WPP_DEFINE_BIT(TRACE_USBDK_UTILS)                                    \
+        WPP_DEFINE_BIT(TRACE_USBDK_USBTARGET)                                \
+        WPP_DEFINE_BIT(TRACE_USBDK_FILTERSTRATEGY)                           \
+        WPP_DEFINE_BIT(TRACE_USBDK_URB)                                      \
+        WPP_DEFINE_BIT(TRACE_USBDK_REGISTRY)                                 \
+        WPP_DEFINE_BIT(TRACE_USBDK_WDFREQUEST)                               \
         )
 
 #define WPP_FLAG_LEVEL_LOGGER(flag, level)                                  \

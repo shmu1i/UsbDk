@@ -73,6 +73,6 @@ void CRegText::Dump() const
 {
     for (auto idData : *this)
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_REGTEXT, "%!FUNC! ID: %S", idData);
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_REGTEXT, "%!FUNC! ID: %S", idData);
     }
 }

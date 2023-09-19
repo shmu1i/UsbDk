@@ -46,7 +46,7 @@ DriverEntry(
     //
     WPP_INIT_TRACING( DriverObject, RegistryPath );
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_DRIVER, "%!FUNC! Entry");
 
     //
     // Register a cleanup callback so that we can call WPP_CLEANUP when
@@ -70,7 +70,7 @@ DriverEntry(
                              &Driver);
 
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfDriverCreate failed %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_DRIVER, "WdfDriverCreate failed %!STATUS!", status);
         WPP_CLEANUP(DriverObject);
         return status;
     }
@@ -80,7 +80,7 @@ DriverEntry(
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_DRIVER, "%!FUNC! Exit");
 
     return STATUS_SUCCESS;
 }
@@ -92,7 +92,7 @@ DriverUnload(IN WDFDRIVER Driver)
 
     PAGED_CODE();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_DRIVER, "%!FUNC! Entry");
 
     CUsbDkControlDevice::Deallocate();
 
@@ -109,12 +109,12 @@ UsbDkEvtDeviceAdd(
 {
     PAGED_CODE();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_DRIVER, "%!FUNC! Entry");
 
     auto FilterDevice = new CUsbDkFilterDevice();
     if (FilterDevice == nullptr)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "%!FUNC! Failed to allocate filter device");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_DRIVER, "%!FUNC! Failed to allocate filter device");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -127,7 +127,7 @@ UsbDkEvtDeviceAdd(
 
     status = FilterDevice->AttachToStack(Driver);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit %!STATUS!", status);
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_DRIVER, "%!FUNC! Exit %!STATUS!", status);
 
     return status;
 }
@@ -141,7 +141,7 @@ UsbDkEvtDriverContextCleanup(
 
     PAGED_CODE ();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_DRIVER, "%!FUNC! Entry");
 
     //
     // Stop WPP Tracing

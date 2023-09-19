@@ -47,14 +47,14 @@ NTSTATUS CUsbDkRedirectorStrategy::MakeAvailable()
     status = m_Target.Create(m_Owner->WdfObject());
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Cannot create USB target");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Cannot create USB target");
         return status;
     }
 
     status = m_ControlDevice->NotifyRedirectorAttached(m_DeviceID, m_InstanceID, m_Owner);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Failed to raise creation notification");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Failed to raise creation notification");
     }
 
     return status;
@@ -65,20 +65,20 @@ NTSTATUS CUsbDkRedirectorStrategy::Create(CUsbDkFilterDevice *Owner)
     auto status = CUsbDkHiderStrategy::Create(Owner);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Base class creation failed");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Base class creation failed");
         return status;
     }
 
     status = m_IncomingDataQueue.Create(*m_Owner);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! RW Queue creation failed");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! RW Queue creation failed");
     }
 
     status = m_IncomingConfigQueue.Create(*m_Owner);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! IOCTL Queue creation failed");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! IOCTL Queue creation failed");
     }
     return status;
 }
@@ -125,7 +125,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRW(CRedirectorRequest &WdfRe
     auto status = WdfRequest.FetchInputObject(TransferRequest);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! failed to read transfer request, %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! failed to read transfer request, %!STATUS!", status);
         return status;
     }
 
@@ -137,7 +137,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRW(CRedirectorRequest &WdfRe
     status = WdfRequest.FetchOutputObject(Context->GenResult);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! failed to fetch output buffer, %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! failed to fetch output buffer, %!STATUS!", status);
         return status;
     }
 
@@ -151,7 +151,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRW(CRedirectorRequest &WdfRe
         status = LockerFunc(WdfRequest, *TransferRequest, Context->LockedBuffer);
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Failed to lock user buffer, %!STATUS!", status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Failed to lock user buffer, %!STATUS!", status);
         }
         break;
 
@@ -160,7 +160,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRW(CRedirectorRequest &WdfRe
         break;
 
     default:
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Error: Wrong TransferType: %d", Context->TransferType);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Error: Wrong TransferType: %d", Context->TransferType);
         status = STATUS_INVALID_PARAMETER;
         break;
     }
@@ -177,7 +177,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRWIsoTransfer(CRedirectorReq
     auto status = LockerFunc(WdfRequest, TransferRequest, Context->LockedBuffer);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Failed to lock user buffer, %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Failed to lock user buffer, %!STATUS!", status);
         return status;
     }
 
@@ -188,7 +188,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRWIsoTransfer(CRedirectorReq
 #pragma warning(pop)
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Failed to lock user buffer of Iso Packet Lengths, %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Failed to lock user buffer of Iso Packet Lengths, %!STATUS!", status);
         return status;
     }
 
@@ -199,7 +199,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRWIsoTransfer(CRedirectorReq
 #pragma warning(pop)
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Failed to lock user buffer of Iso Packet Result, %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Failed to lock user buffer of Iso Packet Result, %!STATUS!", status);
     }
 
     return status;
@@ -220,7 +220,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRWControlTransfer(CRedirecto
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! ProbeForRead failed!");
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! ProbeForRead failed!");
         return STATUS_ACCESS_VIOLATION;
     }
 
@@ -235,7 +235,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRWControlTransfer(CRedirecto
 #pragma warning(pop)
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! LockUserBufferForRead failed %!STATUS!", status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! LockUserBufferForRead failed %!STATUS!", status);
         }
     }
     else // read
@@ -247,7 +247,7 @@ NTSTATUS CUsbDkRedirectorStrategy::IoInCallerContextRWControlTransfer(CRedirecto
 #pragma warning(pop)
         if (!NT_SUCCESS(status))
         {
-            TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! LockUserBufferForWrite failed %!STATUS!", status);
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! LockUserBufferForWrite failed %!STATUS!", status);
         }
     }
 
@@ -513,7 +513,7 @@ void CUsbDkRedirectorStrategy::WritePipe(WDFREQUEST Request)
         }
         break;
     default:
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Error: Wrong transfer type: %d\n", Context->TransferType);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Error: Wrong transfer type: %d\n", Context->TransferType);
         WdfRequest.SetStatus(STATUS_INVALID_PARAMETER);
     }
 }
@@ -538,7 +538,7 @@ void CUsbDkRedirectorStrategy::TraceTransferError(const CRedirectorRequest &WdfR
         ASSERT(Context->Direction != UsbDkTransferDirection::Unknown);
     }
 
-    TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR,
+    TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR,
                 "%!FUNC! %!usbdktransferdirection! transfer failed: %!STATUS! UsbdStatus 0x%x, "
                 "Endpoint address %llu, "
                 "Transfer type %!usbdktransfertype!, "
@@ -608,7 +608,7 @@ void CUsbDkRedirectorStrategy::ReadPipe(WDFREQUEST Request)
         }
         break;
     default:
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! Error: Wrong transfer type: %d\n", Context->TransferType);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! Error: Wrong transfer type: %d\n", Context->TransferType);
         WdfRequest.SetStatus(STATUS_INVALID_PARAMETER);
     }
 }
@@ -653,18 +653,18 @@ void CUsbDkRedirectorStrategy::OnClose()
 {
     USB_DK_DEVICE_ID ID;
     UsbDkFillIDStruct(&ID, *m_DeviceID->begin(), *m_InstanceID->begin());
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_REDIRECTOR, "%!FUNC!");
+    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_REDIRECTOR, "%!FUNC!");
 
     if (m_ControlDevice->IsPortRedirection(ID))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_REDIRECTOR, "%!FUNC! Do not remove redirection for removed device if port redirecion is used.");
+        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_REDIRECTOR, "%!FUNC! Do not remove redirection for removed device if port redirecion is used.");
         return;
     }
 
     auto status = m_ControlDevice->RemoveRedirect(ID);
     if (!NT_SUCCESS(status))
     {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_REDIRECTOR, "%!FUNC! RemoveRedirect failed: %!STATUS!", status);
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_REDIRECTOR, "%!FUNC! RemoveRedirect failed: %!STATUS!", status);
     }
 }
 
