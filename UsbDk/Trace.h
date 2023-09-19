@@ -27,6 +27,7 @@
 // Tracing GUID - 88e1661f-48b6-410f-b096-ba84e9f0656f
 //
 
+#ifndef WPP_CONTROL_GUIDS
 #define WPP_CONTROL_GUIDS                                              \
     WPP_DEFINE_CONTROL_GUID(                                           \
         UsbDkTraceGuid, (88e1661f,48b6,410f,b096,ba84e9f0656f), \
@@ -78,3 +79,5 @@
 // CUSTOM_TYPE(usbdktransferdirection, ItemEnum(UsbDkTransferDirection));
 // end_wpp
 //
+
+#endif  // WPP_CONTROL_GUIDS
