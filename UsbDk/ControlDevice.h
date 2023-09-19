@@ -240,10 +240,10 @@ public:
     static PCUNICODE_STRING Get()
     { return *m_Path; };
 
-private:
     static void CreateFrom(PCUNICODE_STRING DriverRegPath);
     static void Destroy();
 
+private:
     class CAllocatablePath : public CString,
                              public CAllocatable < PagedPool, 'PRHR' >
     {};
