@@ -425,6 +425,9 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
         return;
     }
 
+    // this shit was disabled coz it crashes when enquring some devices (like our virtual devs)
+    // also it seems that it's not really neaded
+#if 0
     USB_DEVICE_DESCRIPTOR DevDescriptor;
     auto status = pdoAccess.GetDeviceDescriptor(DevDescriptor);
     if (!NT_SUCCESS(status))
@@ -455,6 +458,10 @@ void CUsbDkHubFilterStrategy::RegisterNewChild(PDEVICE_OBJECT PDO)
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Cannot fetch configuration descriptors");
         return;
     }
+#else
+    USB_DEVICE_DESCRIPTOR DevDescriptor = {0};
+    CUsbDkChildDevice::TDescriptorsCache CfgDescriptors(0);
+#endif
 
     CUsbDkChildDevice *Device = new CUsbDkChildDevice(DevID, InstanceID, HubID, PortString, Port, Speed,
                                                       DevDescriptor, CfgDescriptors, *m_Owner, PDO);
@@ -700,6 +707,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     USB_DK_DEVICE_ID ID;
     UsbDkFillIDStruct(&ID, *DevID->begin(), *InstanceID->begin());
 
+#if 0
     // Get device descriptor
     USB_DEVICE_DESCRIPTOR DevDescr;
     if (!m_Strategy->GetControlDevice()->GetDeviceDescriptor(ID, DevDescr))
@@ -726,6 +734,7 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
         m_Strategy = &m_HubStrategy;
         return true;
     }
+#endif
 
     // Configuration tells to redirect -> redirector strategy
     if (m_Strategy->GetControlDevice()->ShouldRedirect(ID))
