@@ -677,7 +677,8 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
     DevID->Dump();
 
     // Root hubs -> Hub strategy
-    if ((DevID->Match(L"USB\\ROOT_HUB")         ||
+    if ((DevID->Match(L"USB\\VIROOTHUB")        ||
+         DevID->Match(L"USB\\ROOT_HUB")         ||
          DevID->Match(L"USB\\ROOT_HUB20")       ||
          DevID->Match(L"USB\\ROOT_HUB30")       ||
          DevID->Match(L"NUSB3\\ROOT_HUB30")     ||
