@@ -642,18 +642,39 @@ bool CUsbDkFilterDevice::CStrategist::SelectStrategy(PDEVICE_OBJECT DevObj)
 
     DevID->Dump();
 
-    // Root hubs -> Hub strategy
-    if ((DevID->Match(L"USB\\VIROOTHUB")        ||
-         DevID->Match(L"USB\\ROOT_HUB")         ||
-         DevID->Match(L"USB\\ROOT_HUB20")       ||
-         DevID->Match(L"USB\\ROOT_HUB30")       ||
-         DevID->Match(L"NUSB3\\ROOT_HUB30")     ||
-         DevID->Match(L"IUSB3\\ROOT_HUB30")))
     {
-        TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Assigning HUB strategy");
-        m_Strategy->Delete();
-        m_Strategy = &m_HubStrategy;
-        return true;
+        auto isHUB = false;
+
+        CWdmDeviceAccess pdoAccess(DevObj);
+
+        const CObjHolder<CRegText> pdoIDs[] = {
+            pdoAccess.GetDeviceID(),
+            pdoAccess.GetHardwareIDs(),
+            pdoAccess.GetCompatibleIDs(),
+        };
+
+        const wchar_t* hubIDs[] = {
+            L"USB\\VIROOTHUB",
+            L"USB\\ROOT_HUB",
+            L"USB\\ROOT_HUB20",
+            L"USB\\ROOT_HUB30",
+            L"NUSB3\\ROOT_HUB30",
+            L"IUSB3\\ROOT_HUB30",
+            L"USB\\USB20_HUB",
+            L"USB\\USB30_HUB",
+        };
+
+        for (auto i = 0u; i < sizeof(pdoIDs) / sizeof(pdoIDs[0]) && !isHUB; i++)
+            for (auto j = 0u; j < sizeof(hubIDs) / sizeof(hubIDs[0]) && !isHUB; j++)
+                if (pdoIDs[i]->Match(hubIDs[j]))
+                    isHUB = true;
+
+        if (isHUB) {
+            TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_USBDK_FILTERDEVICE, "%!FUNC! Assigning HUB strategy");
+            m_Strategy->Delete();
+            m_Strategy = &m_HubStrategy;
+            return true;
+        }
     }
 
     // Not a USB device -> do not filter

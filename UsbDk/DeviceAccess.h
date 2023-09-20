@@ -53,6 +53,8 @@ public:
     CRegText *GetAddressString();
     CRegText *GetDeviceID() { return new CRegSz(QueryBusID(BusQueryDeviceID)); }
     CRegText *GetInstanceID() { return new CRegSz(QueryBusID(BusQueryInstanceID)); }
+    CRegText* GetHardwareIDs() { return new CRegMultiSz(QueryBusID(BusQueryHardwareIDs)); }
+    CRegText* GetCompatibleIDs() { return new CRegMultiSz(QueryBusID(BusQueryCompatibleIDs)); }
     bool QueryPowerData(CM_POWER_DATA& powerData);
 protected:
     PDEVICE_OBJECT m_DevObj;
