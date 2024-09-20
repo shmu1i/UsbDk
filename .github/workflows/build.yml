@@ -39,6 +39,6 @@ jobs:
 
 
       - name: Build UsbDk
-        run: |
-          msbuild UsbDk.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
+        run: msbuild UsbDk.sln /p:Configuration="Win10 Release" /p:Platform=x64
+        shell: pwsh
         working-directory: .
