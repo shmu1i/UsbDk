@@ -1,0 +1,41 @@
+name: Build UsbDk
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        configuration: [Release, Debug]
+        platform: [x64, x86]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Visual Studio
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Install Wix Toolset
+        run: |
+          choco install wixtoolset --version=3.8 -y
+        continue-on-error: true
+
+      - name: Setup WDK
+        run: |
+          choco install windows-driver-kit -y
+
+      - name: Setup Windows 10 SDK
+        run: |
+          choco install windows-sdk-10-version-2004 -y
+
+      - name: Build UsbDk
+        run: |
+          msbuild UsbDk.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
+        working-directory: .
