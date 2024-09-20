@@ -39,6 +39,6 @@ jobs:
 
 
       - name: Build UsbDk
-        run: msbuild UsbDk.sln /p:Configuration="Win10 Release" /p:Platform=x64
+        run: msbuild UsbDk.sln /p:Configuration="Win10 Release" /p:Platform=x64 /p:ValidNTTargetVersions="0x0A000000" /p:TargetVersion="0x0A000000"
         shell: pwsh
         working-directory: .
