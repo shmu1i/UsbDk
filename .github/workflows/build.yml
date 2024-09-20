@@ -28,9 +28,10 @@ jobs:
           choco install wixtoolset --version=3.8 -y
         continue-on-error: true
 
-      - name: Setup WDK
-        run: |
-          choco install windowsdriverkit10 -y
+      - name: Install Windows Driver Kit
+        run: choco install windowsdriverkit10 -y --execution-timeout=0
+        shell: pwsh
+
 
       - name: Setup Windows 10 SDK
         run: |
