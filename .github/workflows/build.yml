@@ -30,7 +30,7 @@ jobs:
 
       - name: Setup WDK
         run: |
-          choco install windows-driver-kit -y
+          choco install windowsdriverkit10 -y
 
       - name: Setup Windows 10 SDK
         run: |
